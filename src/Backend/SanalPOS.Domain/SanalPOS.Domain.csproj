@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Çekirdek katman: hiçbir dış pakete/projeye bağımlı değildir -->
+</Project>
