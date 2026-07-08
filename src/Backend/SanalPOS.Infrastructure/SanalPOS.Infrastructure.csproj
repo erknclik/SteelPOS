@@ -7,6 +7,7 @@
     <ProjectReference Include="..\SanalPOS.Infrastructure.Redis\SanalPOS.Infrastructure.Redis.csproj" />
     <ProjectReference Include="..\SanalPOS.Infrastructure.Messaging.RabbitMq\SanalPOS.Infrastructure.Messaging.RabbitMq.csproj" />
     <ProjectReference Include="..\SanalPOS.Infrastructure.Messaging.Kafka\SanalPOS.Infrastructure.Messaging.Kafka.csproj" />
+    <ProjectReference Include="..\SanalPOS.Infrastructure.Iso8583\SanalPOS.Infrastructure.Iso8583.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MassTransit" />

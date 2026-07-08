@@ -6,6 +6,7 @@ using SanalPOS.Application.Common.Interfaces;
 using SanalPOS.Infrastructure.BankAdapters;
 using SanalPOS.Infrastructure.Consumers;
 using SanalPOS.Infrastructure.EfCore;
+using SanalPOS.Infrastructure.Iso8583;
 using SanalPOS.Infrastructure.Messaging.Kafka;
 using SanalPOS.Infrastructure.Messaging.RabbitMq;
 using SanalPOS.Infrastructure.NHibernate;
@@ -33,8 +34,10 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasherService, PasswordHasherService>();
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
 
-        // Banka adaptörleri: yeni banka eklendiğinde buraya kaydedilir; factory koda göre çözer.
+        // Banka adaptörleri: factory, kayıtlı tüm adaptörleri ProviderCode'a göre çözer.
+        // ISO 8583 konuşan bankalar konfigürasyondan gelir (Iso8583:Banks); mock ilk faz içindir.
         services.AddSingleton<IBankProviderAdapter, MockBankAdapter>();
+        services.AddIso8583BankAdapters(configuration);
         services.AddSingleton<IBankAdapterFactory, BankAdapterFactory>();
 
         services.AddScoped<Webhooks.IWebhookDispatcher, Webhooks.WebhookDispatcher>();
