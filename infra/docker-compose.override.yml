@@ -1,0 +1,7 @@
+# Yerel geliştirme override'ı: sadece altyapı servislerini ayağa kaldırmak için
+#   docker compose up -d postgres redis rabbitmq seq
+# API/Web'i host makinede (dotnet run / npm run dev) çalıştırırken bu yeterlidir.
+services:
+  sanalpos-api:
+    environment:
+      Persistence__EnableSensitiveDataLogging: "true"

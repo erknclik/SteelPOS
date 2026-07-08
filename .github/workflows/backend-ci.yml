@@ -1,0 +1,48 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "src/Backend/**"
+      - "tests/**"
+      - "Directory.*.props"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/Backend/**"
+      - "tests/**"
+      - "Directory.*.props"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore src/Backend/SanalPOS.sln
+
+      - name: Build
+        run: dotnet build src/Backend/SanalPOS.sln --no-restore -c Release
+
+      - name: Test (unit + architecture + API smoke)
+        run: >
+          dotnet test src/Backend/SanalPOS.sln --no-build -c Release
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+
+      - name: Bağımlılık zafiyet taraması
+        run: dotnet list src/Backend/SanalPOS.sln package --vulnerable --include-transitive
+
+      - name: Coverage raporunu artefakt olarak yükle
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: ignore

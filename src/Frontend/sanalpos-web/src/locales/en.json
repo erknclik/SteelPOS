@@ -1,0 +1,48 @@
+{
+  "app": { "title": "SanalPOS" },
+  "nav": {
+    "dashboard": "Dashboard",
+    "payments": "Transactions",
+    "newPayment": "New Payment",
+    "merchants": "Merchants",
+    "reports": "Reports",
+    "webhooks": "Webhooks",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Sign In",
+    "userName": "Username",
+    "password": "Password",
+    "loginFailed": "Login failed"
+  },
+  "payments": {
+    "orderReference": "Order Ref",
+    "amount": "Amount",
+    "currency": "Currency",
+    "installments": "Installments",
+    "cardNumber": "Card Number",
+    "cardHolder": "Card Holder",
+    "expiry": "Expiry",
+    "cvv": "CVV",
+    "status": "Status",
+    "type": "Type",
+    "commission": "Commission",
+    "net": "Net Amount",
+    "date": "Date",
+    "submit": "Submit Payment",
+    "created": "Payment created successfully.",
+    "refund": "Refund",
+    "void": "Void",
+    "statusHistory": "Status History"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "delete": "Delete",
+    "actions": "Actions",
+    "noData": "No records found",
+    "total": "Total"
+  }
+}
