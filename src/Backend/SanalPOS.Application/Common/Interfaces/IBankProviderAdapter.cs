@@ -1,0 +1,37 @@
+namespace SanalPOS.Application.Common.Interfaces;
+
+/// <summary>
+/// Banka/ödeme kuruluşu adaptör sözleşmesi (adapter pattern). İlk fazda MockBankAdapter,
+/// ileride gerçek banka adaptörleri (İş Bankası, Garanti vb.) bu arayüzü uygular.
+/// Tam PAN/CVV sadece bu çağrı sırasında bellekte yaşar; asla loglanmaz/saklanmaz.
+/// </summary>
+public interface IBankProviderAdapter
+{
+    string ProviderCode { get; }
+    Task<ChargeResult> ChargeAsync(ChargeRequest request, CancellationToken ct = default);
+    Task<ChargeResult> PreAuthAsync(ChargeRequest request, CancellationToken ct = default);
+    Task<BankOperationResult> CaptureAsync(string bankAuthCode, decimal amount, CancellationToken ct = default);
+    Task<BankOperationResult> VoidAsync(string bankAuthCode, CancellationToken ct = default);
+    Task<BankOperationResult> RefundAsync(string bankAuthCode, decimal amount, CancellationToken ct = default);
+}
+
+/// <summary>Aktif banka adaptörünü provider koduna göre çözer.</summary>
+public interface IBankAdapterFactory
+{
+    IBankProviderAdapter Resolve(string providerCode);
+}
+
+public sealed record ChargeRequest(
+    string CardNumber,
+    string CardHolderName,
+    int ExpireMonth,
+    int ExpireYear,
+    string Cvv,
+    decimal Amount,
+    string Currency,
+    int InstallmentCount,
+    string OrderReference);
+
+public sealed record ChargeResult(bool IsApproved, string? AuthCode, string? ReasonCode, string? ReasonMessage);
+
+public sealed record BankOperationResult(bool IsSuccessful, string? ReasonCode, string? ReasonMessage);

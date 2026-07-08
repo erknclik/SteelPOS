@@ -1,0 +1,48 @@
+{
+  "app": { "title": "SanalPOS" },
+  "nav": {
+    "dashboard": "Panel",
+    "payments": "İşlemler",
+    "newPayment": "Yeni Ödeme",
+    "merchants": "Üye İşyerleri",
+    "reports": "Raporlar",
+    "webhooks": "Webhook'lar",
+    "settings": "Ayarlar",
+    "logout": "Çıkış"
+  },
+  "auth": {
+    "login": "Giriş Yap",
+    "userName": "Kullanıcı Adı",
+    "password": "Parola",
+    "loginFailed": "Giriş başarısız"
+  },
+  "payments": {
+    "orderReference": "Sipariş No",
+    "amount": "Tutar",
+    "currency": "Para Birimi",
+    "installments": "Taksit",
+    "cardNumber": "Kart Numarası",
+    "cardHolder": "Kart Sahibi",
+    "expiry": "Son Kullanma",
+    "cvv": "CVV",
+    "status": "Durum",
+    "type": "Tip",
+    "commission": "Komisyon",
+    "net": "Net Tutar",
+    "date": "Tarih",
+    "submit": "Ödemeyi Gönder",
+    "created": "Ödeme başarıyla oluşturuldu.",
+    "refund": "İade Et",
+    "void": "İptal (Void)",
+    "statusHistory": "Durum Geçmişi"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu",
+    "save": "Kaydet",
+    "delete": "Sil",
+    "actions": "İşlemler",
+    "noData": "Kayıt bulunamadı",
+    "total": "Toplam"
+  }
+}

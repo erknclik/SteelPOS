@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\SanalPOS.Application\SanalPOS.Application.csproj" />
+    <ProjectReference Include="..\SanalPOS.Contracts\SanalPOS.Contracts.csproj" />
+    <ProjectReference Include="..\SanalPOS.Infrastructure.EfCore\SanalPOS.Infrastructure.EfCore.csproj" />
+    <ProjectReference Include="..\SanalPOS.Infrastructure.NHibernate\SanalPOS.Infrastructure.NHibernate.csproj" />
+    <ProjectReference Include="..\SanalPOS.Infrastructure.Redis\SanalPOS.Infrastructure.Redis.csproj" />
+    <ProjectReference Include="..\SanalPOS.Infrastructure.Messaging.RabbitMq\SanalPOS.Infrastructure.Messaging.RabbitMq.csproj" />
+    <ProjectReference Include="..\SanalPOS.Infrastructure.Messaging.Kafka\SanalPOS.Infrastructure.Messaging.Kafka.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

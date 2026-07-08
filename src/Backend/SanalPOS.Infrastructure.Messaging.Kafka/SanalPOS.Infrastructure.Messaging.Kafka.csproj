@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\SanalPOS.Application\SanalPOS.Application.csproj" />
+    <ProjectReference Include="..\SanalPOS.Contracts\SanalPOS.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.Kafka" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+  </ItemGroup>
+</Project>

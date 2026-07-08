@@ -1,0 +1,15 @@
+# Repo kökü build context olmalıdır (Directory.Packages.props erişimi için):
+#   docker build -f infra/Dockerfile.api .
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Backend/ ./src/Backend/
+RUN dotnet restore "src/Backend/SanalPOS.API/SanalPOS.API.csproj"
+RUN dotnet publish "src/Backend/SanalPOS.API/SanalPOS.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENTRYPOINT ["dotnet", "SanalPOS.API.dll"]
