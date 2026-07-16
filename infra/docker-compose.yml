@@ -59,6 +59,17 @@ services:
       ACCEPT_EULA: "Y"
     ports: ["5341:80"]
 
+  # ISO 8583 banka simülatörü: sanalpos-api, "banksim" sağlayıcısı üzerinden
+  # gerçek TCP/ISO 8583 akışını bu servise karşı koşar (yalnızca geliştirme).
+  banksim:
+    build:
+      context: ../
+      dockerfile: infra/Dockerfile.banksim
+    ports: ["8583:8583"]
+    environment:
+      ISO8583_SIM_PORT: "8583"
+      ISO8583_SIM_DIALECT: "Iso87Ascii"
+
   sanalpos-api:
     build:
       context: ../
@@ -74,6 +85,16 @@ services:
       Messaging__Provider: "RabbitMq"
       Messaging__RabbitMq__Host: "rabbitmq"
       Jwt__SigningKey: "dev-only-signing-key-min-32-chars-CHANGE-ME!"
+      # ISO 8583 simülatör bankası: BankProviderCode = "BANKSIM" olan terminaller
+      # gerçek ISO 8583 hattı üzerinden banksim servisine yönlenir.
+      Iso8583__Banks__0__Enabled: "true"
+      Iso8583__Banks__0__ProviderCode: "BANKSIM"
+      Iso8583__Banks__0__Dialect: "Iso87Ascii"
+      Iso8583__Banks__0__TerminalId: "TERM0001"
+      Iso8583__Banks__0__MerchantId: "000000000000001"
+      Iso8583__Banks__0__MerchantNameLocation: "SanalPOS Dev Merchant Istanbul TR"
+      Iso8583__Banks__0__Channel__Host: "banksim"
+      Iso8583__Banks__0__Channel__Port: "8583"
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,6 +102,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      banksim:
+        condition: service_started
 
   sanalpos-web:
     build:

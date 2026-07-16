@@ -146,7 +146,30 @@ bu koda işaret eder. Hatalı/eksik konfigürasyon açılışta patlar (fail-fas
 4. Terminal kaydının `BankProviderCode` değerini yeni `ProviderCode` ile eşleştirin.
 5. Banka test ortamına karşı sertifikasyon senaryolarını koşun (onay, red, iptal, iade, timeout/reversal).
 
-## 8. Test
+## 8. Banka Simülatörü (SanalPOS.BankSimulator)
+
+Gerçek banka bağlantısı olmadan uçtan uca akışı koşmak için ISO 8583 konuşan sahte banka
+host'u. Konsol uygulaması olarak (`dotnet run --project src/Backend/SanalPOS.BankSimulator -- 8583`)
+veya Docker Compose'daki `banksim` servisi olarak çalışır; entegrasyon testleri aynı motoru
+in-process kullanır.
+
+Deterministik senaryolar (test kartıyla tetiklenir, hepsi Luhn-geçerli olmalıdır):
+
+| Tetik | Sonuç |
+|---|---|
+| PAN sonu `0002` (örn. 4000000000000002) | DE39=51, yetersiz bakiye |
+| PAN sonu `0004` (örn. 4000000800000004) | Yanıt yok → adaptör timeout + otomatik reversal |
+| PAN sonu `0041` | DE39=41, kayıp kart |
+| CVV (DE48) `999` | DE39=82, CVV hatası |
+| Diğer tüm kartlar | DE39=00 onay + DE38 otorizasyon kodu |
+
+0800 (echo/sign-on) ve 0400 (reversal) her zaman onaylanır.
+
+Docker Compose ortamında `sanalpos-api`, `BANKSIM` sağlayıcı koduyla önceden
+yapılandırılmıştır: `BankProviderCode = "BANKSIM"` olan bir terminal oluşturmak,
+ödemeleri gerçek TCP/ISO 8583 hattı üzerinden simülatöre yönlendirmek için yeterlidir.
+
+## 9. Test
 
 `tests/SanalPOS.Iso8583.UnitTests` kapsamı:
 
@@ -155,3 +178,8 @@ bu koda işaret eder. Hatalı/eksik konfigürasyon açılışta patlar (fail-fas
 - Kanal: loopback TCP üzerinde sahte banka ile gerçek framing, eşzamanlı isteklerin STAN ile
   doğru eşleşmesi, timeout ve yeniden bağlanma senaryoları.
 - Maskeleme, STAN üreteci (thread-safety), dialekt registry.
+
+`tests/SanalPOS.API.IntegrationTests/Iso8583EndToEndTests.cs` ise tam zinciri doğrular:
+HTTP API → CQRS handler → `Iso8583BankAdapter` → `TcpIso8583Channel` → **gerçek TCP** →
+`BankSimulatorEngine`. Onay, red (51/82) ve banka sessiz kaldığında timeout + otomatik
+reversal senaryoları uçtan uca koşulur.
