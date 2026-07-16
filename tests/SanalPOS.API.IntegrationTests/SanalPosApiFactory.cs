@@ -76,6 +76,23 @@ public class SanalPosApiFactory : WebApplicationFactory<Program>
         SeededTerminalId = terminal.Id;
     }
 
+    /// <summary>Seed edilen mağazaya, verilen banka sağlayıcı koduyla ek bir terminal ekler.</summary>
+    public async Task<Guid> SeedTerminalAsync(string bankProviderCode)
+    {
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<SanalPosDbContext>();
+
+        var store = context.Stores.First();
+        var existing = context.Terminals.FirstOrDefault(t => t.BankProviderCode == bankProviderCode);
+        if (existing is not null)
+            return existing.Id;
+
+        var terminal = new Terminal(store.Id, $"TERM-{bankProviderCode}", bankProviderCode);
+        context.Terminals.Add(terminal);
+        await context.SaveChangesAsync();
+        return terminal.Id;
+    }
+
     private sealed class InMemoryCacheService : ICacheService
     {
         private readonly ConcurrentDictionary<string, string> _store = new();

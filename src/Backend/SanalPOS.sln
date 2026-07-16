@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SanalPOS.Infrastructure.Iso
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SanalPOS.Iso8583.UnitTests", "..\..\tests\SanalPOS.Iso8583.UnitTests\SanalPOS.Iso8583.UnitTests.csproj", "{83DD0973-1CBE-45E4-851C-91983221B640}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SanalPOS.BankSimulator", "SanalPOS.BankSimulator\SanalPOS.BankSimulator.csproj", "{619ECEA4-A4CE-43B9-B013-CD509B9CF68B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -126,5 +128,9 @@ Global
 		{83DD0973-1CBE-45E4-851C-91983221B640}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83DD0973-1CBE-45E4-851C-91983221B640}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83DD0973-1CBE-45E4-851C-91983221B640}.Release|Any CPU.Build.0 = Release|Any CPU
+		{619ECEA4-A4CE-43B9-B013-CD509B9CF68B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{619ECEA4-A4CE-43B9-B013-CD509B9CF68B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{619ECEA4-A4CE-43B9-B013-CD509B9CF68B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{619ECEA4-A4CE-43B9-B013-CD509B9CF68B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,16 @@
+# ISO 8583 banka simülatörü (yalnızca yerel geliştirme/test ortamı içindir).
+# Repo kökü build context olmalıdır:
+#   docker build -f infra/Dockerfile.banksim .
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Backend/ ./src/Backend/
+RUN dotnet restore "src/Backend/SanalPOS.BankSimulator/SanalPOS.BankSimulator.csproj"
+RUN dotnet publish "src/Backend/SanalPOS.BankSimulator/SanalPOS.BankSimulator.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 8583
+ENV ISO8583_SIM_PORT=8583
+ENTRYPOINT ["dotnet", "SanalPOS.BankSimulator.dll"]
