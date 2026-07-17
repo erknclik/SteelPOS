@@ -38,7 +38,31 @@ public interface IPaymentTransactionRepository : IRepository<PaymentTransaction>
         CancellationToken ct = default);
 
     Task<DailySummary> GetDailySummaryAsync(Guid? merchantId, DateTime dayUtc, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gün sonu mutabakatı için banka sağlayıcısı + para birimi bazında toplamlar.
+    /// Satışlar: o gün tamamlanmış Sale/Capture (Approved/Refunded/PartiallyRefunded dahil —
+    /// iade ayrı bir credit kalemidir); iptaller: Reversed.
+    /// </summary>
+    Task<IReadOnlyList<ProviderDailyTotals>> GetProviderDailyTotalsAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
 }
+
+/// <summary>Mutabakat için sağlayıcı bazında günlük satış/iptal toplamları.</summary>
+public sealed record ProviderDailyTotals(
+    string BankProviderCode,
+    string Currency,
+    int SaleCount,
+    decimal SaleAmount,
+    int VoidCount,
+    decimal VoidAmount);
+
+/// <summary>Mutabakat için sağlayıcı bazında günlük iade toplamları.</summary>
+public sealed record ProviderRefundTotals(
+    string BankProviderCode,
+    string Currency,
+    int RefundCount,
+    decimal RefundAmount);
 
 /// <summary>Günlük özet raporu için aggregate sonucu.</summary>
 public sealed record DailySummary(
@@ -72,6 +96,10 @@ public interface ITerminalRepository : IRepository<Terminal>
 public interface IRefundTransactionRepository : IRepository<RefundTransaction>
 {
     Task<IReadOnlyList<RefundTransaction>> GetByOriginalTransactionAsync(Guid originalTransactionId, CancellationToken ct = default);
+
+    /// <summary>O gün tamamlanmış iadelerin sağlayıcı + para birimi bazında toplamları (orijinal işlem üzerinden).</summary>
+    Task<IReadOnlyList<ProviderRefundTotals>> GetProviderDailyTotalsAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
 }
 
 public interface ICommissionRuleRepository : IRepository<CommissionRule>

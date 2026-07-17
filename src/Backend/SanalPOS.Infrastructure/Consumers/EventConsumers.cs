@@ -76,6 +76,39 @@ public class RefundCompletedConsumer : IConsumer<RefundCompletedEvent>
     }
 }
 
+/// <summary>
+/// Zamanlanmış mutabakat tetiklemesini (BackgroundJobs -> DailyReconciliationRequestedEvent)
+/// tüketir ve mutabakat komutunu çalıştırır. Idempotent: aynı gün ikinci kez koşarsa
+/// aynı toplamlar tekrar gönderilir (banka tarafı batch'i günle eşleştirir).
+/// </summary>
+public class DailyReconciliationRequestedConsumer : IConsumer<DailyReconciliationRequestedEvent>
+{
+    private readonly MediatR.ISender _sender;
+    private readonly ILogger<DailyReconciliationRequestedConsumer> _logger;
+
+    public DailyReconciliationRequestedConsumer(MediatR.ISender sender, ILogger<DailyReconciliationRequestedConsumer> logger)
+    {
+        _sender = sender;
+        _logger = logger;
+    }
+
+    public async Task Consume(ConsumeContext<DailyReconciliationRequestedEvent> context)
+    {
+        var e = context.Message;
+        _logger.LogInformation("Mutabakat tetiklendi. Gün: {Day}, CorrelationId: {CorrelationId}", e.Day, e.CorrelationId);
+
+        var results = await _sender.Send(
+            new Application.Reconciliation.RunReconciliationCommand(e.Day), context.CancellationToken);
+
+        foreach (var result in results.Where(r => !r.IsBalanced))
+        {
+            _logger.LogWarning(
+                "Mutabakat farkı: Provider {Provider} ({Currency}), Gün {Day}, Kod {Code} - {Message}",
+                result.ProviderCode, result.Currency, result.Day, result.ReasonCode, result.ReasonMessage);
+        }
+    }
+}
+
 public class WebhookTestRequestedConsumer : IConsumer<WebhookTestRequestedEvent>
 {
     private readonly IWebhookDispatcher _webhookDispatcher;

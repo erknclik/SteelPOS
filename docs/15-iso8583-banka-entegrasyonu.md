@@ -153,6 +153,28 @@ bu koda işaret eder. Hatalı/eksik konfigürasyon açılışta patlar (fail-fas
 4. Terminal kaydının `BankProviderCode` değerini yeni `ProviderCode` ile eşleştirin.
 5. Banka test ortamına karşı sertifikasyon senaryolarını koşun (onay, red, iptal, iade, timeout/reversal).
 
+## 7a. Gün Sonu Mutabakatı (Batch Close, 0500)
+
+Her gün UTC 03:00'te `SanalPOS.BackgroundJobs` bir `DailyReconciliationRequestedEvent`
+yayınlar; API tarafındaki consumer `RunReconciliationCommand`'ı çalıştırır
+(manuel tetikleme: `POST /api/v1/reconciliation/run`, SystemAdmin).
+
+Akış: günün toplamları banka sağlayıcısı + para birimi bazında hesaplanır ve her bankaya
+**0500 (PC 920000)** batch-close mesajı ile gönderilir:
+
+| Alan | İçerik |
+|---|---|
+| DE76 / DE88 | Satış adedi / tutarı (debits) — 0200 satış + 0220 kapama |
+| DE74 / DE86 | İade adedi / tutarı (credits) |
+| DE77 / DE89 | İptal adedi / tutarı (debit reversals) |
+
+Banka toplamları kendi defteriyle karşılaştırır: eşleşirse DE39=00 (dengede),
+eşleşmezse **DE39=95** (out-of-balance) döner ve fark operasyon ekibince incelenir.
+Sayım kuralı: void edilen işlem **hem satış hem iptal** kalemidir (banka semantiği,
+net = debits − reversals); ön otorizasyon (0100) tahsilat olmadığı için sayılmaz,
+kapama (0220) sayılır. Timeout sonrası otomatik reversal'a düşen işlemler hiçbir
+tarafta yer almaz (onaylanmadılar) — mutabakat bu senaryonun nihai güvencesidir.
+
 ## 8. Banka Simülatörü (SanalPOS.BankSimulator)
 
 Gerçek banka bağlantısı olmadan uçtan uca akışı koşmak için ISO 8583 konuşan sahte banka
@@ -170,7 +192,10 @@ Deterministik senaryolar (test kartıyla tetiklenir, hepsi Luhn-geçerli olmalı
 | CVV (DE48) `999` | DE39=82, CVV hatası |
 | Diğer tüm kartlar | DE39=00 onay + DE38 otorizasyon kodu |
 
-0800 (echo/sign-on) ve 0400 (reversal) her zaman onaylanır.
+0800 (echo/sign-on) ve 0400 (reversal) her zaman onaylanır. Simülatör onayladığı finansal
+işlemleri kendi defterine (ledger) yazar; 0500 batch-close geldiğinde gönderilen toplamları
+defteriyle karşılaştırıp 00 (dengede) veya 95 (out-of-balance) döner — böylece mutabakat
+akışı uçtan uca gerçekçi test edilir.
 
 Docker Compose ortamında `sanalpos-api`, `BANKSIM` sağlayıcı koduyla önceden
 yapılandırılmıştır: `BankProviderCode = "BANKSIM"` olan bir terminal oluşturmak,

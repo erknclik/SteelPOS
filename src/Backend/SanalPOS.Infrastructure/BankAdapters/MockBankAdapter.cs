@@ -39,6 +39,9 @@ public class MockBankAdapter : IBankProviderAdapter
             ? new BankOperationResult(false, "51", "İşlem bulunamadı.")
             : new BankOperationResult(true, null, null));
 
+    public Task<BankOperationResult> SettleAsync(SettlementTotals totals, CancellationToken ct = default) =>
+        Task.FromResult(new BankOperationResult(true, null, null));
+
     private ChargeResult Evaluate(ChargeRequest request)
     {
         // Log'a asla tam PAN yazılmaz.

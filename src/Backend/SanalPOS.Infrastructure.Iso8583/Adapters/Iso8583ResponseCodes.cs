@@ -42,6 +42,7 @@ public static class Iso8583ResponseCodes
         ["91"] = "Kart hamili bankası hizmet dışı.",
         ["92"] = "Yönlendirme yapılamadı.",
         ["94"] = "Mükerrer işlem.",
+        ["95"] = "Mutabakat toplamları uyuşmuyor (batch out-of-balance).",
         ["96"] = "Banka sistem hatası.",
         ["99"] = "Genel hata."
     };

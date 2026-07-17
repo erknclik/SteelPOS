@@ -107,6 +107,37 @@ public class NhPaymentTransactionRepository : NhRepository<PaymentTransaction>, 
             approved.Sum(x => x.NetAmount),
             rows.Sum(x => x.RefundedTotal));
     }
+
+    public async Task<IReadOnlyList<ProviderDailyTotals>> GetProviderDailyTotalsAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken ct = default)
+    {
+        // Banka batch semantiği: void edilen işlem hem satış (otorizasyon) hem reversal
+        // kalemidir; net tutar banka tarafında debits - reversals olarak hesaplanır.
+        var settledStatuses = new[]
+        {
+            TransactionStatus.Approved, TransactionStatus.Refunded,
+            TransactionStatus.PartiallyRefunded, TransactionStatus.Reversed
+        };
+        var saleTypes = new[] { TransactionType.Sale, TransactionType.Capture };
+
+        var rows = await Session.Query<PaymentTransaction>()
+            .Where(x => x.CompletedAt >= fromUtc && x.CompletedAt < toUtc)
+            .Where(x => saleTypes.Contains(x.TransactionType) && settledStatuses.Contains(x.Status))
+            .Select(x => new { x.BankProviderCode, x.Amount.Currency, x.Status, x.Amount.Amount })
+            .ToListAsync(ct);
+
+        return rows
+            .GroupBy(x => new { x.BankProviderCode, x.Currency })
+            .Select(g => new ProviderDailyTotals(
+                g.Key.BankProviderCode,
+                g.Key.Currency,
+                g.Count(),
+                g.Sum(x => x.Amount),
+                g.Count(x => x.Status == TransactionStatus.Reversed),
+                g.Where(x => x.Status == TransactionStatus.Reversed).Sum(x => x.Amount)))
+            .OrderBy(x => x.BankProviderCode)
+            .ToList();
+    }
 }
 
 public class NhMerchantRepository : NhRepository<Merchant>, IMerchantRepository
@@ -176,6 +207,23 @@ public class NhRefundTransactionRepository : NhRepository<RefundTransaction>, IR
 
     public async Task<IReadOnlyList<RefundTransaction>> GetByOriginalTransactionAsync(Guid originalTransactionId, CancellationToken ct = default) =>
         await Session.Query<RefundTransaction>().Where(x => x.OriginalTransactionId == originalTransactionId).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<ProviderRefundTotals>> GetProviderDailyTotalsAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken ct = default)
+    {
+        var rows = await (
+            from r in Session.Query<RefundTransaction>()
+            join t in Session.Query<PaymentTransaction>() on r.OriginalTransactionId equals t.Id
+            where r.Status == RefundStatus.Completed && r.CreatedAt >= fromUtc && r.CreatedAt < toUtc
+            select new { t.BankProviderCode, t.Amount.Currency, r.RefundAmount }).ToListAsync(ct);
+
+        return rows
+            .GroupBy(x => new { x.BankProviderCode, x.Currency })
+            .Select(g => new ProviderRefundTotals(
+                g.Key.BankProviderCode, g.Key.Currency, g.Count(), g.Sum(x => x.RefundAmount)))
+            .OrderBy(x => x.BankProviderCode)
+            .ToList();
+    }
 }
 
 public class NhCommissionRuleRepository : NhRepository<CommissionRule>, ICommissionRuleRepository

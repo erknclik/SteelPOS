@@ -91,6 +91,27 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
         return await SendOperationAsync(message, ct);
     }
 
+    public async Task<BankOperationResult> SettleAsync(SettlementTotals totals, CancellationToken ct = default)
+    {
+        // 0500 batch close (PC 920000): toplamlar ISO 8583 mutabakat alanlarında gönderilir.
+        // Satışlar debit (DE76/88), iadeler credit (DE74/86), iptaller debit reversal (DE77/89).
+        var message = await NewMessageAsync("0500", "920000", ct);
+        message[49] = CurrencyNumericCode(totals.Currency);
+        message[74] = totals.RefundCount.ToString("D10");
+        message[76] = totals.SaleCount.ToString("D10");
+        message[77] = totals.VoidCount.ToString("D10");
+        message[86] = ToMinorUnits16(totals.RefundAmount);
+        message[88] = ToMinorUnits16(totals.SaleAmount);
+        message[89] = ToMinorUnits16(totals.VoidAmount);
+
+        _logger.LogInformation(
+            "{Provider}: gün sonu mutabakatı gönderiliyor. Gün: {Day}, Satış: {SaleCount}/{SaleAmount}, İade: {RefundCount}/{RefundAmount}, İptal: {VoidCount}/{VoidAmount}",
+            ProviderCode, totals.Day, totals.SaleCount, totals.SaleAmount,
+            totals.RefundCount, totals.RefundAmount, totals.VoidCount, totals.VoidAmount);
+
+        return await SendOperationAsync(message, ct);
+    }
+
     /// <summary>Orijinal işlem referansını mesaja işler: DE37 = RRN, DE38 = otorizasyon kodu.</summary>
     private static void ApplyOriginalReference(Iso8583Message message, BankTransactionReference original)
     {
@@ -228,6 +249,10 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
     /// <summary>DE4: tutar, kuruş cinsinden 12 hane (ISO 8583 minor units).</summary>
     private static string ToMinorUnits(decimal amount) =>
         ((long)decimal.Round(amount * 100m, 0, MidpointRounding.AwayFromZero)).ToString("D12");
+
+    /// <summary>Mutabakat toplam alanları (DE86/88/89): kuruş cinsinden 16 hane.</summary>
+    private static string ToMinorUnits16(decimal amount) =>
+        ((long)decimal.Round(amount * 100m, 0, MidpointRounding.AwayFromZero)).ToString("D16");
 
     /// <summary>DE49: ISO 4217 sayısal para birimi kodu.</summary>
     private static string CurrencyNumericCode(string alphaCode) => alphaCode.ToUpperInvariant() switch
