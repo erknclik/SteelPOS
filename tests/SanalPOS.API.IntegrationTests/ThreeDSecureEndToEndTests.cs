@@ -154,6 +154,39 @@ public class ThreeDSecureEndToEndTests : IClassFixture<Iso8583ApiFactory>
     }
 
     [Fact]
+    public async Task Complete_WithRelativeReturnUrl_RedirectsToResultPage()
+    {
+        var (token, terminalId) = await PrepareAsync();
+        var initiation = await InitiateAsync(token, terminalId, "4111111111111111");
+        var (md, paRes) = await RunAcsAsync(initiation);
+
+        using var client = _factory.CreateClient(
+            new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await client.PostAsync(
+            "/api/v1/payments/3ds/complete?returnUrl=" + Uri.EscapeDataString("/payments/3ds/result"),
+            new FormUrlEncodedContent(new Dictionary<string, string> { ["MD"] = md, ["PaRes"] = paRes }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        var location = response.Headers.Location!.ToString();
+        location.Should().StartWith("/payments/3ds/result?");
+        location.Should().Contain("status=Approved").And.Contain(
+            "transactionId=" + initiation.GetProperty("transactionId").GetGuid());
+    }
+
+    [Fact]
+    public async Task Complete_WithDisallowedAbsoluteReturnUrl_Returns400()
+    {
+        await PrepareAsync();
+
+        var response = await _client.PostAsync(
+            "/api/v1/payments/3ds/complete?returnUrl=" + Uri.EscapeDataString("https://evil.example/phish"),
+            new FormUrlEncodedContent(new Dictionary<string, string> { ["MD"] = "x", ["PaRes"] = "Y" }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Complete_WithUnknownMd_Returns404()
     {
         await PrepareAsync();

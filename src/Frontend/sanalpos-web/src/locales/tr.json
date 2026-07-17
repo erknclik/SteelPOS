@@ -1,5 +1,7 @@
 {
-  "app": { "title": "SanalPOS" },
+  "app": {
+    "title": "SanalPOS"
+  },
   "nav": {
     "dashboard": "Panel",
     "payments": "İşlemler",
@@ -8,7 +10,8 @@
     "reports": "Raporlar",
     "webhooks": "Webhook'lar",
     "settings": "Ayarlar",
-    "logout": "Çıkış"
+    "logout": "Çıkış",
+    "reconciliation": "Mutabakat"
   },
   "auth": {
     "login": "Giriş Yap",
@@ -34,7 +37,9 @@
     "created": "Ödeme başarıyla oluşturuldu.",
     "refund": "İade Et",
     "void": "İptal (Void)",
-    "statusHistory": "Durum Geçmişi"
+    "statusHistory": "Durum Geçmişi",
+    "capture": "Provizyon Kapat",
+    "captured": "Provizyon kapatıldı."
   },
   "common": {
     "loading": "Yükleniyor...",
@@ -44,5 +49,31 @@
     "actions": "İşlemler",
     "noData": "Kayıt bulunamadı",
     "total": "Toplam"
+  },
+  "threeDs": {
+    "payWith3ds": "3D Secure ile öde",
+    "redirecting": "Bankanızın doğrulama sayfasına yönlendiriliyorsunuz...",
+    "continue": "Devam",
+    "approvedTitle": "Ödeme Onaylandı",
+    "failedTitle": "Ödeme Tamamlanamadı",
+    "sessionExpired": "3D Secure oturumu bulunamadı veya süresi doldu.",
+    "viewTransaction": "İşlemi Görüntüle",
+    "declined": "Banka işlemi reddetti."
+  },
+  "reconciliation": {
+    "day": "Gün",
+    "provider": "Banka",
+    "allProviders": "Tüm bankalar",
+    "run": "Mutabakatı Çalıştır",
+    "results": "Sonuçlar",
+    "sales": "Satış (adet / tutar)",
+    "refunds": "İade (adet / tutar)",
+    "voids": "İptal (adet / tutar)",
+    "result": "Sonuç",
+    "balanced": "Dengede",
+    "unbalanced": "Dengede değil",
+    "allBalanced": "Tüm bankalarla mutabakat dengede.",
+    "outOfBalance": "Mutabakat farkı var! Detayları inceleyin.",
+    "noTransactions": "Seçilen günde mutabakatlanacak işlem yok."
   }
 }

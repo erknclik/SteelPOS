@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Field, Input, Select } from "@/shared/components/ui";
+import { toast } from "@/shared/components/Toast";
 import { formatCardNumberInput } from "@/shared/lib/formatters";
 import { createPaymentSchema, type CreatePaymentFormValues } from "../schemas/paymentSchema";
-import { useCreatePayment } from "../hooks";
+import { useCreatePayment, useInitiate3DS } from "../hooks";
+import { AcsRedirect } from "./AcsRedirect";
 import type { Merchant, Terminal } from "@/types/api";
 
 interface Props {
@@ -15,7 +19,11 @@ interface Props {
 
 export function PaymentForm({ merchants, terminals, onMerchantChange }: Props) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const createPayment = useCreatePayment();
+  const initiate3DS = useInitiate3DS();
+  const [use3DSecure, setUse3DSecure] = useState(true);
+  const [acsRedirect, setAcsRedirect] = useState<{ acsUrl: string; md: string; paReq: string } | null>(null);
 
   const {
     register,
@@ -28,12 +36,35 @@ export function PaymentForm({ merchants, terminals, onMerchantChange }: Props) {
     defaultValues: { currency: "TRY", installmentCount: 1 },
   });
 
+  // Kart bilgisi gönderim sonrası state'ten temizlenir (docs/09-frontend-react.md §7).
+  const clearCard = (values: CreatePaymentFormValues) =>
+    reset({ ...values, cardNumber: "", cvv: "", cardHolderName: "" });
+
   const onSubmit = (values: CreatePaymentFormValues) => {
-    createPayment.mutate(values, {
-      // Kart bilgisi gönderim sonrası state'ten temizlenir (docs/09-frontend-react.md §7).
-      onSettled: () => reset({ ...values, cardNumber: "", cvv: "", cardHolderName: "" }),
+    if (!use3DSecure) {
+      createPayment.mutate(values, { onSettled: () => clearCard(values) });
+      return;
+    }
+
+    initiate3DS.mutate(values, {
+      onSuccess: (data) => {
+        if (data.requiresRedirect) {
+          // Kart bilgisi artık gerekli değil; ACS'e yönlendirmeden önce temizlenir.
+          clearCard(values);
+          setAcsRedirect({ acsUrl: data.acsUrl!, md: data.md!, paReq: data.paReq! });
+          return;
+        }
+
+        // Kart 3DS'e kayıtlı değil: işlem doğrudan sonuçlandı.
+        if (data.payment?.status === "Approved") toast.success(t("payments.created"));
+        else toast.error(t("threeDs.declined"));
+        navigate(`/payments/${data.transactionId}`);
+      },
+      onSettled: () => clearCard(values),
     });
   };
+
+  if (acsRedirect) return <AcsRedirect {...acsRedirect} />;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2">
@@ -115,10 +146,19 @@ export function PaymentForm({ merchants, terminals, onMerchantChange }: Props) {
         </Field>
       </div>
 
-      <div className="sm:col-span-2">
-        <Button type="submit" disabled={createPayment.isPending} className="w-full sm:w-auto">
+      <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Button type="submit" disabled={createPayment.isPending || initiate3DS.isPending} className="w-full sm:w-auto">
           {t("payments.submit")}
         </Button>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={use3DSecure}
+            onChange={(e) => setUse3DSecure(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          {t("threeDs.payWith3ds")}
+        </label>
       </div>
     </form>
   );

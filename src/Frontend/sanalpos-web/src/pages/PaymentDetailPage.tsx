@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useRefund, useStatusHistory, useTransaction, useVoid } from "@/features/payments/hooks";
+import { useCapture, useRefund, useStatusHistory, useTransaction, useVoid } from "@/features/payments/hooks";
 import { Button, Card, Spinner, StatusBadge, Table } from "@/shared/components/ui";
 import { formatDate, formatMoney } from "@/shared/lib/formatters";
 import { useAuthStore } from "@/features/auth/store";
@@ -12,6 +12,7 @@ export function PaymentDetailPage() {
   const { data: history } = useStatusHistory(id);
   const refund = useRefund(id);
   const voidPayment = useVoid(id);
+  const capture = useCapture(id);
   const canRefund = useAuthStore((s) => s.hasRole("SystemAdmin", "MerchantAdmin"));
 
   if (isLoading || !tx) return <Spinner />;
@@ -41,6 +42,7 @@ export function PaymentDetailPage() {
           <Item label={t("payments.cardNumber")} value={tx.maskedCardNumber} mono />
           <Item label={t("payments.cardHolder")} value={tx.cardHolderName} />
           <Item label="Banka Onay Kodu" value={tx.bankAuthCode ?? "-"} mono />
+          <Item label="Banka Referansı (RRN)" value={tx.bankRrn ?? "-"} mono />
           <Item label={t("payments.commission")} value={formatMoney(tx.commissionAmount, tx.currency)} />
           <Item label={t("payments.net")} value={formatMoney(tx.netAmount, tx.currency)} />
           <Item label="İade Edilen" value={formatMoney(tx.refundedTotal, tx.currency)} />
@@ -48,6 +50,11 @@ export function PaymentDetailPage() {
         </dl>
 
         <div className="mt-5 flex gap-2">
+          {tx.transactionType === "PreAuth" && tx.status === "Approved" && (
+            <Button onClick={() => capture.mutate()} disabled={capture.isPending}>
+              {t("payments.capture")}
+            </Button>
+          )}
           {canRefund && remaining > 0 && ["Approved", "PartiallyRefunded"].includes(tx.status) && (
             <Button variant="secondary" onClick={onRefund} disabled={refund.isPending}>
               {t("payments.refund")}

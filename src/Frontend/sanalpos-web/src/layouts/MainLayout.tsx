@@ -10,6 +10,7 @@ const navItems = [
   { to: "/payments", key: "payments", roles: undefined },
   { to: "/payments/new", key: "newPayment", roles: undefined },
   { to: "/merchants", key: "merchants", roles: ["SystemAdmin"] },
+  { to: "/reconciliation", key: "reconciliation", roles: ["SystemAdmin"] },
   { to: "/reports/daily", key: "reports", roles: ["SystemAdmin", "MerchantAdmin"] },
   { to: "/webhooks", key: "webhooks", roles: ["SystemAdmin", "MerchantAdmin"] },
   { to: "/settings", key: "settings", roles: undefined },

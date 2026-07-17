@@ -1,5 +1,7 @@
 {
-  "app": { "title": "SanalPOS" },
+  "app": {
+    "title": "SanalPOS"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "payments": "Transactions",
@@ -8,7 +10,8 @@
     "reports": "Reports",
     "webhooks": "Webhooks",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "reconciliation": "Reconciliation"
   },
   "auth": {
     "login": "Sign In",
@@ -34,7 +37,9 @@
     "created": "Payment created successfully.",
     "refund": "Refund",
     "void": "Void",
-    "statusHistory": "Status History"
+    "statusHistory": "Status History",
+    "capture": "Capture",
+    "captured": "Pre-authorization captured."
   },
   "common": {
     "loading": "Loading...",
@@ -44,5 +49,31 @@
     "actions": "Actions",
     "noData": "No records found",
     "total": "Total"
+  },
+  "threeDs": {
+    "payWith3ds": "Pay with 3D Secure",
+    "redirecting": "Redirecting to your bank's verification page...",
+    "continue": "Continue",
+    "approvedTitle": "Payment Approved",
+    "failedTitle": "Payment Failed",
+    "sessionExpired": "3D Secure session not found or expired.",
+    "viewTransaction": "View Transaction",
+    "declined": "The bank declined the transaction."
+  },
+  "reconciliation": {
+    "day": "Day",
+    "provider": "Bank",
+    "allProviders": "All banks",
+    "run": "Run Reconciliation",
+    "results": "Results",
+    "sales": "Sales (count / amount)",
+    "refunds": "Refunds (count / amount)",
+    "voids": "Voids (count / amount)",
+    "result": "Result",
+    "balanced": "Balanced",
+    "unbalanced": "Out of balance",
+    "allBalanced": "Reconciliation is balanced with all banks.",
+    "outOfBalance": "Reconciliation mismatch! Review the details.",
+    "noTransactions": "No transactions to reconcile for the selected day."
   }
 }
