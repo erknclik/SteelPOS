@@ -75,6 +75,8 @@ public class PaymentTransactionConfiguration : IEntityTypeConfiguration<PaymentT
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.CardHolderName).HasMaxLength(150);
         builder.Property(x => x.BankAuthCode).HasMaxLength(50);
+        builder.Property(x => x.BankRrn).HasMaxLength(24);
+        builder.Property(x => x.BankStan).HasMaxLength(12);
         builder.Property(x => x.BankProviderCode).HasMaxLength(50);
         builder.Property(x => x.IdempotencyKey).HasMaxLength(100).IsRequired();
         builder.Property(x => x.CommissionAmount).HasColumnType("numeric(18,2)");

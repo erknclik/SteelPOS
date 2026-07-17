@@ -60,21 +60,23 @@ public class Iso8583MessageMaskerTests
 public class InMemoryStanSequenceTests
 {
     [Fact]
-    public void Next_ReturnsSixDigitZeroPaddedValues()
+    public async Task Next_ReturnsSixDigitZeroPaddedValues()
     {
         var sequence = new InMemoryStanSequence();
 
-        var stan = sequence.Next();
+        var stan = await sequence.NextAsync();
 
         stan.Should().HaveLength(6).And.MatchRegex("^[0-9]{6}$");
     }
 
     [Fact]
-    public void Next_NeverReturnsZeroAndDoesNotRepeatWithinRange()
+    public async Task Next_NeverReturnsZeroAndDoesNotRepeatWithinRange()
     {
         var sequence = new InMemoryStanSequence();
 
-        var values = Enumerable.Range(0, 5000).Select(_ => sequence.Next()).ToList();
+        var values = new List<string>();
+        for (var i = 0; i < 5000; i++)
+            values.Add(await sequence.NextAsync());
 
         values.Should().NotContain("000000");
         values.Distinct().Should().HaveCount(values.Count);
@@ -86,13 +88,22 @@ public class InMemoryStanSequenceTests
         var sequence = new InMemoryStanSequence();
         var bag = new System.Collections.Concurrent.ConcurrentBag<string>();
 
-        await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
+        await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
         {
             for (var i = 0; i < 1000; i++)
-                bag.Add(sequence.Next());
+                bag.Add(await sequence.NextAsync());
         })));
 
         bag.Distinct().Should().HaveCount(8000);
+    }
+
+    [Fact]
+    public void Factory_ReturnsSameSequencePerProvider()
+    {
+        var factory = new InMemoryStanSequenceFactory();
+
+        factory.Create("ISBANK").Should().BeSameAs(factory.Create("isbank"));
+        factory.Create("ISBANK").Should().NotBeSameAs(factory.Create("GARANTI"));
     }
 }
 

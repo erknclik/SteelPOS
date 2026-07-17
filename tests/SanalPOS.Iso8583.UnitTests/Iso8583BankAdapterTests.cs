@@ -161,43 +161,62 @@ public class Iso8583BankAdapterTests
         reversal[90].Should().StartWith("0200" + original[11]).And.HaveLength(42);
     }
 
+    private static BankTransactionReference OriginalRef(decimal amount = 125.50m) =>
+        new("A12345", "618914123456", "004242", amount, "TRY");
+
     [Fact]
-    public async Task Refund_UsesCreditProcessingCode()
+    public async Task Refund_UsesCreditProcessingCodeAndOriginalReference()
     {
         var channel = new FakeChannel();
 
-        var result = await CreateAdapter(channel).RefundAsync("A12345", 50m);
+        var result = await CreateAdapter(channel).RefundAsync(OriginalRef(), 50m);
 
         result.IsSuccessful.Should().BeTrue();
         var sent = channel.Sent.Single();
         sent.Mti.Should().Be("0200");
         sent[3].Should().Be("200000");
         sent[4].Should().Be("000000005000");
+        sent[37].Should().Be("618914123456", "iade orijinal RRN ile eşleştirilir");
         sent[38].Should().Be("A12345");
+        sent[49].Should().Be("949");
     }
 
     [Fact]
-    public async Task Void_UsesReversalMtiAndVoidProcessingCode()
+    public async Task Void_SendsReversalWithOriginalStanInDe90()
     {
         var channel = new FakeChannel();
 
-        await CreateAdapter(channel).VoidAsync("A12345");
+        await CreateAdapter(channel).VoidAsync(OriginalRef());
 
         var sent = channel.Sent.Single();
         sent.Mti.Should().Be("0400");
         sent[3].Should().Be("020000");
+        sent[4].Should().Be("000000012550", "void orijinal tutarı taşır");
+        sent[37].Should().Be("618914123456");
+        sent[90].Should().StartWith("0200004242").And.HaveLength(42);
     }
 
     [Fact]
-    public async Task Capture_SendsAdviceWithAmountAndAuthCode()
+    public async Task Void_WithoutOriginalStan_OmitsDe90()
     {
         var channel = new FakeChannel();
 
-        await CreateAdapter(channel).CaptureAsync("A12345", 125.50m);
+        await CreateAdapter(channel).VoidAsync(new BankTransactionReference("A12345", null, null, 10m, "TRY"));
+
+        channel.Sent.Single().Has(90).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Capture_SendsAdviceWithAmountAndOriginalReference()
+    {
+        var channel = new FakeChannel();
+
+        await CreateAdapter(channel).CaptureAsync(OriginalRef(), 125.50m);
 
         var sent = channel.Sent.Single();
         sent.Mti.Should().Be("0220");
         sent[4].Should().Be("000000012550");
+        sent[37].Should().Be("618914123456");
         sent[38].Should().Be("A12345");
     }
 
@@ -206,11 +225,31 @@ public class Iso8583BankAdapterTests
     {
         var channel = new FakeChannel { Responder = FakeChannel.DeclineWith("25") };
 
-        var result = await CreateAdapter(channel).VoidAsync("A12345");
+        var result = await CreateAdapter(channel).VoidAsync(OriginalRef());
 
         result.IsSuccessful.Should().BeFalse();
         result.ReasonCode.Should().Be("25");
         result.ReasonMessage.Should().Be("Kayıt bulunamadı.");
+    }
+
+    [Fact]
+    public async Task Charge_WhenApproved_ReturnsRrnAndStanFromResponse()
+    {
+        var channel = new FakeChannel
+        {
+            Responder = request => new Iso8583Message(Iso8583Message.ResponseMtiOf(request.Mti))
+            {
+                [11] = request[11],
+                [37] = "BANK-RRN-001",
+                [38] = "A12345",
+                [39] = "00"
+            }
+        };
+
+        var result = await CreateAdapter(channel).ChargeAsync(SampleCharge());
+
+        result.Rrn.Should().Be("BANK-RRN-001");
+        result.Stan.Should().Be(channel.Sent.Single()[11]);
     }
 
     [Fact]

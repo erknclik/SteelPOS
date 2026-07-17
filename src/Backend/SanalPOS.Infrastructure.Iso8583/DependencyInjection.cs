@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using SanalPOS.Application.Common.Interfaces;
 using SanalPOS.Infrastructure.Iso8583.Adapters;
@@ -18,6 +19,10 @@ public static class DependencyInjection
     public static IServiceCollection AddIso8583BankAdapters(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IIso8583DialectRegistry, Iso8583DialectRegistry>();
+
+        // Varsayılan STAN üreteci süreç içidir; çok instance'lı üretimde ana kompozisyon
+        // (SanalPOS.Infrastructure) Redis tabanlı factory kaydederek bunu geçersiz kılar.
+        services.TryAddSingleton<IStanSequenceFactory, InMemoryStanSequenceFactory>();
 
         var bankConfigs = configuration.GetSection(Iso8583BankOptions.SectionName).GetChildren().ToList();
         var seenCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -46,7 +51,7 @@ public static class DependencyInjection
                 return new Iso8583BankAdapter(
                     options,
                     channel,
-                    new InMemoryStanSequence(),
+                    sp.GetRequiredService<IStanSequenceFactory>().Create(options.ProviderCode),
                     TimeProvider.System,
                     loggerFactory.CreateLogger<Iso8583BankAdapter>());
             });

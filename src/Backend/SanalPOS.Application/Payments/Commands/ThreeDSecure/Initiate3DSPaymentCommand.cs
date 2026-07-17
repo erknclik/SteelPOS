@@ -158,7 +158,7 @@ public class Initiate3DSPaymentCommandHandler : IRequestHandler<Initiate3DSPayme
                 : await adapter.ChargeAsync(chargeRequest, ct);
 
             if (chargeResult.IsApproved)
-                transaction.Approve(chargeResult.AuthCode!, merchant.ResolveCommissionRate(request.InstallmentCount, DateTime.UtcNow), performedBy);
+                transaction.Approve(chargeResult.AuthCode!, merchant.ResolveCommissionRate(request.InstallmentCount, DateTime.UtcNow), performedBy, chargeResult.Rrn, chargeResult.Stan);
             else
                 transaction.Decline(chargeResult.ReasonCode ?? "UNKNOWN", chargeResult.ReasonMessage ?? "Banka işlemi reddetti.", performedBy);
 

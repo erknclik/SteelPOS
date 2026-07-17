@@ -37,6 +37,22 @@ public static class DependencyInjection
         // Banka adaptörleri: factory, kayıtlı tüm adaptörleri ProviderCode'a göre çözer.
         // ISO 8583 konuşan bankalar konfigürasyondan gelir (Iso8583:Banks); mock ilk faz içindir.
         services.AddSingleton<IBankProviderAdapter, MockBankAdapter>();
+
+        // STAN üreteci: tek instance'da InMemory yeterli; çok instance'lı üretimde Redis
+        // (banka başına merkezî INCR sayacı) seçilmelidir. Geçersiz değer açılışta patlar.
+        var stanProvider = configuration["Iso8583:StanSequence"] ?? "InMemory";
+        switch (stanProvider)
+        {
+            case "Redis":
+                services.AddSingleton<Iso8583.Network.IStanSequenceFactory, RedisStanSequenceFactory>();
+                break;
+            case "InMemory":
+                break; // AddIso8583BankAdapters içindeki TryAdd varsayılanı kullanılır.
+            default:
+                throw new InvalidOperationException(
+                    $"Desteklenmeyen Iso8583:StanSequence değeri: '{stanProvider}'. Geçerli değerler: 'InMemory', 'Redis'.");
+        }
+
         services.AddIso8583BankAdapters(configuration);
         services.AddSingleton<IBankAdapterFactory, BankAdapterFactory>();
 

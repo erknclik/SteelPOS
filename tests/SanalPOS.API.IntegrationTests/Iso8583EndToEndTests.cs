@@ -133,6 +133,49 @@ public class Iso8583EndToEndTests : IClassFixture<Iso8583ApiFactory>
     }
 
     [Fact]
+    public async Task Payment_PersistsBankRrn_AndRefundCarriesItOverTheWire()
+    {
+        var (token, terminalId) = await PrepareAsync();
+        var payment = await CreatePaymentAsync(token, terminalId, "4111111111111111", "123");
+        var transactionId = payment.GetProperty("transactionId").GetGuid();
+
+        // Onay yanıtındaki RRN persist edilmiş olmalı.
+        using var getRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/payments/{transactionId}");
+        getRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var detail = JsonDocument.Parse(await (await _client.SendAsync(getRequest)).Content.ReadAsStringAsync()).RootElement;
+        detail.GetProperty("bankRrn").GetString().Should().NotBeNullOrEmpty();
+
+        // İade: orijinal RRN/STAN referansı ISO 8583 hattından (DE37/DE38) simülatöre gider.
+        using var refundRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/payments/{transactionId}/refund");
+        refundRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        refundRequest.Content = JsonContent.Create(new { amount = 249.90m, reason = "E2E iade testi" });
+
+        var refundResponse = await _client.SendAsync(refundRequest);
+        var refundBody = await refundResponse.Content.ReadAsStringAsync();
+        refundResponse.StatusCode.Should().Be(HttpStatusCode.OK, refundBody);
+
+        var refund = JsonDocument.Parse(refundBody).RootElement;
+        refund.GetProperty("transactionStatus").GetString().Should().Be("Refunded");
+    }
+
+    [Fact]
+    public async Task Void_OverRealIso8583Wire_ReversesTransaction()
+    {
+        var (token, terminalId) = await PrepareAsync();
+        var payment = await CreatePaymentAsync(token, terminalId, "4111111111111111", "123");
+        var transactionId = payment.GetProperty("transactionId").GetGuid();
+
+        using var voidRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/payments/{transactionId}/void");
+        voidRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var voidResponse = await _client.SendAsync(voidRequest);
+        var body = await voidResponse.Content.ReadAsStringAsync();
+        voidResponse.StatusCode.Should().Be(HttpStatusCode.OK, body);
+
+        JsonDocument.Parse(body).RootElement.GetProperty("status").GetString().Should().Be("Reversed");
+    }
+
+    [Fact]
     public async Task Payment_WhenBankStaysSilent_IsDeclinedAfterAutoReversal()
     {
         var (token, terminalId) = await PrepareAsync();

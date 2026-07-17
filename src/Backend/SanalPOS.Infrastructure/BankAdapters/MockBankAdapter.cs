@@ -24,18 +24,18 @@ public class MockBankAdapter : IBankProviderAdapter
     public Task<ChargeResult> PreAuthAsync(ChargeRequest request, CancellationToken ct = default) =>
         Task.FromResult(Evaluate(request));
 
-    public Task<BankOperationResult> CaptureAsync(string bankAuthCode, decimal amount, CancellationToken ct = default) =>
-        Task.FromResult(string.IsNullOrEmpty(bankAuthCode)
+    public Task<BankOperationResult> CaptureAsync(BankTransactionReference original, decimal amount, CancellationToken ct = default) =>
+        Task.FromResult(string.IsNullOrEmpty(original.AuthCode)
             ? new BankOperationResult(false, "51", "Provizyon bulunamadı.")
             : new BankOperationResult(true, null, null));
 
-    public Task<BankOperationResult> VoidAsync(string bankAuthCode, CancellationToken ct = default) =>
-        Task.FromResult(string.IsNullOrEmpty(bankAuthCode)
+    public Task<BankOperationResult> VoidAsync(BankTransactionReference original, CancellationToken ct = default) =>
+        Task.FromResult(string.IsNullOrEmpty(original.AuthCode)
             ? new BankOperationResult(false, "51", "İşlem bulunamadı.")
             : new BankOperationResult(true, null, null));
 
-    public Task<BankOperationResult> RefundAsync(string bankAuthCode, decimal amount, CancellationToken ct = default) =>
-        Task.FromResult(string.IsNullOrEmpty(bankAuthCode)
+    public Task<BankOperationResult> RefundAsync(BankTransactionReference original, decimal amount, CancellationToken ct = default) =>
+        Task.FromResult(string.IsNullOrEmpty(original.AuthCode)
             ? new BankOperationResult(false, "51", "İşlem bulunamadı.")
             : new BankOperationResult(true, null, null));
 
@@ -52,7 +52,8 @@ public class MockBankAdapter : IBankProviderAdapter
             return new ChargeResult(false, null, "82", "CVV doğrulaması başarısız (mock senaryo).");
 
         var authCode = Random.Shared.Next(100_000, 999_999).ToString();
-        return new ChargeResult(true, authCode, null, null);
+        var rrn = $"M{DateTime.UtcNow:yyDDDHH}{Random.Shared.Next(1000, 9999)}";
+        return new ChargeResult(true, authCode, null, null, rrn, Random.Shared.Next(1, 999_999).ToString("D6"));
     }
 }
 

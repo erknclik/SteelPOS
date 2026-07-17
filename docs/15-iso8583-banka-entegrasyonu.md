@@ -65,13 +65,18 @@ Konfigürasyonda `"Dialect": "XBank"` yazmak yeterlidir; adaptör ve kanal kodu 
 
 ## 3. Mesaj Eşlemesi (Iso8583BankAdapter)
 
-| SanalPOS işlemi | MTI | Processing Code (DE3) | Not |
+| SanalPOS işlemi | MTI | Processing Code (DE3) | Orijinal işlem referansı |
 |---|---|---|---|
-| Satış (Charge) | 0200 | 000000 | |
-| Ön otorizasyon (PreAuth) | 0100 | 000000 | |
-| Kapama (Capture) | 0220 | 000000 | DE38 = orijinal otorizasyon kodu |
-| İptal (Void) | 0400 | 020000 | DE38 |
-| İade (Refund) | 0200 | 200000 | DE38 |
+| Satış (Charge) | 0200 | 000000 | — |
+| Ön otorizasyon (PreAuth) | 0100 | 000000 | — |
+| Kapama (Capture) | 0220 | 000000 | DE37 = RRN, DE38 = otorizasyon kodu |
+| İptal (Void) | 0400 | 020000 | DE37/DE38 + DE90 (orijinal STAN) + DE4 orijinal tutar |
+| İade (Refund) | 0200 | 200000 | DE37/DE38 |
+
+Onay yanıtındaki **RRN (DE37)** ve **STAN (DE11)** `ChargeResult` ile üst katmana döner ve
+`PaymentTransaction.BankRrn/BankStan` alanlarında persist edilir; sonraki operasyonlar bu
+referansları `BankTransactionReference` ile adaptöre geri taşır (bankalar iptal/iadeyi
+yalnızca otorizasyon koduyla değil RRN/STAN ile eşleştirir).
 
 Otomatik doldurulan ortak alanlar: DE7 (iletim zamanı, UTC), DE11 (STAN), DE12/13 (yerel saat/tarih),
 DE18 (MCC), DE22=010, DE25=59 (e-ticaret), DE37 (RRN), DE41/42 (terminal/üye işyeri), DE43.
@@ -93,8 +98,10 @@ ve işlemi `TIMEOUT` koduyla reddeder. Reversal da başarısızsa gün sonu muta
 - **TLS**: `UseTls: true` ile SslStream (sertifika doğrulaması standart; üretimde zorunlu tutun).
 - **Eşleştirme**: yanıtlar sıra garantisi olmadan gelebilir; STAN (DE11) + yanıt MTI anahtarıyla
   bekleyen isteğe eşlenir. Eşleşmeyen yanıt loglanıp atılır.
-- **STAN**: `InMemoryStanSequence` süreç içi döngüsel sayaçtır (000001–999999). Çok instance'lı
-  üretimde banka başına merkezî (örn. Redis tabanlı) `IStanSequence` implementasyonu takılmalıdır.
+- **STAN**: `Iso8583:StanSequence` konfigürasyonu ile seçilir (fail-fast):
+  - `InMemory` (varsayılan): süreç içi döngüsel sayaç (000001–999999); tek instance/dev-test için.
+  - `Redis`: banka başına merkezî INCR sayacı (`sanalpos:iso8583:stan:{provider}`); çok
+    instance'lı üretimde STAN çakışmasını önler, sayaç yeniden başlatmalarda kalıcıdır.
 
 ## 5. Konfigürasyon
 

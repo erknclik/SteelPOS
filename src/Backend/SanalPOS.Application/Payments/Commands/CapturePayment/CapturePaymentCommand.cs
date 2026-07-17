@@ -45,7 +45,10 @@ public class CapturePaymentCommandHandler : IRequestHandler<CapturePaymentComman
                           ?? throw new NotFoundException(nameof(PaymentTransaction), request.TransactionId);
 
         var adapter = _bankAdapterFactory.Resolve(transaction.BankProviderCode);
-        var result = await adapter.CaptureAsync(transaction.BankAuthCode ?? string.Empty, transaction.Amount.Amount, ct);
+        var reference = new BankTransactionReference(
+            transaction.BankAuthCode ?? string.Empty, transaction.BankRrn, transaction.BankStan,
+            transaction.Amount.Amount, transaction.Amount.Currency);
+        var result = await adapter.CaptureAsync(reference, transaction.Amount.Amount, ct);
         if (!result.IsSuccessful)
             throw new DomainException(result.ReasonMessage ?? "Banka provizyon kapamayı reddetti.");
 

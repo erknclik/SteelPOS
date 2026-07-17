@@ -45,7 +45,10 @@ public class VoidPaymentCommandHandler : IRequestHandler<VoidPaymentCommand, Pay
                           ?? throw new NotFoundException(nameof(PaymentTransaction), request.TransactionId);
 
         var adapter = _bankAdapterFactory.Resolve(transaction.BankProviderCode);
-        var result = await adapter.VoidAsync(transaction.BankAuthCode ?? string.Empty, ct);
+        var reference = new BankTransactionReference(
+            transaction.BankAuthCode ?? string.Empty, transaction.BankRrn, transaction.BankStan,
+            transaction.Amount.Amount, transaction.Amount.Currency);
+        var result = await adapter.VoidAsync(reference, ct);
         if (!result.IsSuccessful)
             throw new DomainException(result.ReasonMessage ?? "Banka iptali reddetti.");
 

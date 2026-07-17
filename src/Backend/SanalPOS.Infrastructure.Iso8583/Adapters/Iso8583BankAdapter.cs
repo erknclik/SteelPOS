@@ -15,10 +15,12 @@ namespace SanalPOS.Infrastructure.Iso8583.Adapters;
 /// MTI eşlemesi:
 ///   Satış           -> 0200 (PC 000000)
 ///   Ön otorizasyon  -> 0100 (PC 000000)
-///   Kapama (capture)-> 0220 advice (PC 000000, DE38 = orijinal otorizasyon kodu)
-///   İptal (void)    -> 0400 (PC 020000, DE38)
-///   İade (refund)   -> 0200 (PC 200000, DE38)
+///   Kapama (capture)-> 0220 advice (PC 000000, DE37/DE38 = orijinal RRN/otorizasyon kodu)
+///   İptal (void)    -> 0400 (PC 020000, DE37/DE38 + DE90 orijinal STAN)
+///   İade (refund)   -> 0200 (PC 200000, DE37/DE38)
 ///
+/// Onay yanıtındaki RRN (DE37) ve STAN (DE11) ChargeResult ile üst katmana döner;
+/// sonraki operasyonlar bu referansları BankTransactionReference ile geri taşır.
 /// Tam PAN/CVV yalnızca bu çağrı süresince bellekte yaşar; loglara maskeli yazılır.
 /// </summary>
 public sealed class Iso8583BankAdapter : IBankProviderAdapter
@@ -55,36 +57,52 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
     public Task<ChargeResult> PreAuthAsync(ChargeRequest request, CancellationToken ct = default) =>
         AuthorizeAsync("0100", request, ct);
 
-    public async Task<BankOperationResult> CaptureAsync(string bankAuthCode, decimal amount, CancellationToken ct = default)
+    public async Task<BankOperationResult> CaptureAsync(BankTransactionReference original, decimal amount, CancellationToken ct = default)
     {
-        var message = NewMessage("0220", SaleProcessingCode);
+        var message = await NewMessageAsync("0220", SaleProcessingCode, ct);
         message[4] = ToMinorUnits(amount);
-        message[38] = bankAuthCode;
+        ApplyOriginalReference(message, original);
 
         return await SendOperationAsync(message, ct);
     }
 
-    public async Task<BankOperationResult> VoidAsync(string bankAuthCode, CancellationToken ct = default)
+    public async Task<BankOperationResult> VoidAsync(BankTransactionReference original, CancellationToken ct = default)
     {
-        var message = NewMessage("0400", VoidProcessingCode);
-        message[4] = ToMinorUnits(0m);
-        message[38] = bankAuthCode;
+        var message = await NewMessageAsync("0400", VoidProcessingCode, ct);
+        message[4] = ToMinorUnits(original.OriginalAmount);
+        message[49] = CurrencyNumericCode(original.Currency);
+        ApplyOriginalReference(message, original);
+
+        // DE90: orijinal işlemin kimliği. Zaman bilgisi elde yoksa sıfır dolgu (bankalar
+        // eşleştirmeyi STAN + RRN üzerinden yapar).
+        if (original.Stan is not null)
+            message[90] = $"0200{original.Stan}{new string('0', 32)}";
 
         return await SendOperationAsync(message, ct);
     }
 
-    public async Task<BankOperationResult> RefundAsync(string bankAuthCode, decimal amount, CancellationToken ct = default)
+    public async Task<BankOperationResult> RefundAsync(BankTransactionReference original, decimal amount, CancellationToken ct = default)
     {
-        var message = NewMessage("0200", RefundProcessingCode);
+        var message = await NewMessageAsync("0200", RefundProcessingCode, ct);
         message[4] = ToMinorUnits(amount);
-        message[38] = bankAuthCode;
+        message[49] = CurrencyNumericCode(original.Currency);
+        ApplyOriginalReference(message, original);
 
         return await SendOperationAsync(message, ct);
+    }
+
+    /// <summary>Orijinal işlem referansını mesaja işler: DE37 = RRN, DE38 = otorizasyon kodu.</summary>
+    private static void ApplyOriginalReference(Iso8583Message message, BankTransactionReference original)
+    {
+        if (original.Rrn is not null)
+            message[37] = original.Rrn;
+        if (!string.IsNullOrEmpty(original.AuthCode))
+            message[38] = original.AuthCode;
     }
 
     private async Task<ChargeResult> AuthorizeAsync(string mti, ChargeRequest request, CancellationToken ct)
     {
-        var message = NewMessage(mti, SaleProcessingCode);
+        var message = await NewMessageAsync(mti, SaleProcessingCode, ct);
         message[2] = request.CardNumber;
         message[4] = ToMinorUnits(request.Amount);
         message[14] = $"{request.ExpireYear % 100:D2}{request.ExpireMonth:D2}";
@@ -122,7 +140,11 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
 
         var responseCode = response[39];
         if (Iso8583ResponseCodes.IsApproved(responseCode))
-            return new ChargeResult(true, response.GetRequired(38).Trim(), null, null);
+        {
+            // Banka DE37'yi echo'lamadıysa bizim ürettiğimiz RRN referans kabul edilir.
+            var rrn = response[37]?.Trim() ?? message[37];
+            return new ChargeResult(true, response.GetRequired(38).Trim(), null, null, rrn, response[11] ?? message[11]);
+        }
 
         return new ChargeResult(false, null, responseCode ?? "UNKNOWN", Iso8583ResponseCodes.MessageOf(responseCode));
     }
@@ -149,7 +171,7 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
     {
         try
         {
-            var reversal = NewMessage("0400", original.GetRequired(3));
+            var reversal = await NewMessageAsync("0400", original.GetRequired(3), ct);
             reversal[2] = original[2];
             reversal[4] = original.GetRequired(4);
             reversal[14] = original[14];
@@ -172,11 +194,11 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
     }
 
     /// <summary>Tüm mesajlarda ortak zorunlu alanları doldurur.</summary>
-    private Iso8583Message NewMessage(string mti, string processingCode)
+    private async Task<Iso8583Message> NewMessageAsync(string mti, string processingCode, CancellationToken ct)
     {
         var now = _clock.GetUtcNow();
         var local = _clock.GetLocalNow();
-        var stan = _stanSequence.Next();
+        var stan = await _stanSequence.NextAsync(ct);
 
         var message = new Iso8583Message(mti)
         {
