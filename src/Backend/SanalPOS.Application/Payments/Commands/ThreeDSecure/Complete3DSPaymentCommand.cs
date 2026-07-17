@@ -110,7 +110,9 @@ public class Complete3DSPaymentCommandHandler : IRequestHandler<Complete3DSPayme
             transaction.Approve(
                 chargeResult.AuthCode!,
                 merchant.ResolveCommissionRate(context.InstallmentCount, DateTime.UtcNow),
-                performedBy);
+                performedBy,
+                chargeResult.Rrn,
+                chargeResult.Stan);
         }
         else
         {

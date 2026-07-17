@@ -100,7 +100,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         if (chargeResult.IsApproved)
         {
             var commissionRate = merchant.ResolveCommissionRate(request.InstallmentCount, DateTime.UtcNow);
-            transaction.Approve(chargeResult.AuthCode!, commissionRate, performedBy);
+            transaction.Approve(chargeResult.AuthCode!, commissionRate, performedBy, chargeResult.Rrn, chargeResult.Stan);
         }
         else
         {

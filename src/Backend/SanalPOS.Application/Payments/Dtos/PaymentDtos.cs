@@ -23,6 +23,7 @@ public sealed record TransactionDto(
     string MaskedCardNumber,
     string CardHolderName,
     string? BankAuthCode,
+    string? BankRrn,
     string BankProviderCode,
     decimal CommissionAmount,
     decimal NetAmount,
@@ -34,7 +35,7 @@ public sealed record TransactionDto(
         tx.Id, tx.MerchantId, tx.TerminalId, tx.OrderReference,
         tx.Amount.Amount, tx.Amount.Currency, tx.InstallmentCount,
         tx.TransactionType.ToString(), tx.Status.ToString(),
-        tx.MaskedCard.Value, tx.CardHolderName, tx.BankAuthCode, tx.BankProviderCode,
+        tx.MaskedCard.Value, tx.CardHolderName, tx.BankAuthCode, tx.BankRrn, tx.BankProviderCode,
         tx.CommissionAmount, tx.NetAmount, tx.RefundedTotal, tx.RequestedAt, tx.CompletedAt);
 }
 

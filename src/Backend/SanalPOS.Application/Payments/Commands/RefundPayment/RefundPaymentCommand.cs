@@ -59,7 +59,10 @@ public class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentCommand,
                           ?? throw new NotFoundException(nameof(PaymentTransaction), request.TransactionId);
 
         var adapter = _bankAdapterFactory.Resolve(transaction.BankProviderCode);
-        var bankResult = await adapter.RefundAsync(transaction.BankAuthCode ?? string.Empty, request.Amount, ct);
+        var reference = new BankTransactionReference(
+            transaction.BankAuthCode ?? string.Empty, transaction.BankRrn, transaction.BankStan,
+            transaction.Amount.Amount, transaction.Amount.Currency);
+        var bankResult = await adapter.RefundAsync(reference, request.Amount, ct);
         if (!bankResult.IsSuccessful)
             throw new DomainException(bankResult.ReasonMessage ?? "Banka iadeyi reddetti.");
 

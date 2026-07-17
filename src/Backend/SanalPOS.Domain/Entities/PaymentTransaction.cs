@@ -19,6 +19,13 @@ public class PaymentTransaction : BaseEntity, IAuditableEntity
     public MaskedCardNumber MaskedCard { get; private set; } = null!;
     public string CardHolderName { get; private set; } = string.Empty;
     public string? BankAuthCode { get; private set; }
+
+    /// <summary>Banka yanıtındaki Retrieval Reference Number (ISO 8583 DE37); iptal/iade/mutabakatta orijinal işlem referansıdır.</summary>
+    public string? BankRrn { get; private set; }
+
+    /// <summary>Banka yanıtındaki System Trace Audit Number (ISO 8583 DE11).</summary>
+    public string? BankStan { get; private set; }
+
     public string BankProviderCode { get; private set; } = string.Empty;
     public string IdempotencyKey { get; private set; } = string.Empty;
     public decimal CommissionAmount { get; private set; }
@@ -73,11 +80,13 @@ public class PaymentTransaction : BaseEntity, IAuditableEntity
         ChangeStatus(TransactionStatus.Pending3DS, changedBy);
     }
 
-    public void Approve(string bankAuthCode, decimal commissionRate, string changedBy)
+    public void Approve(string bankAuthCode, decimal commissionRate, string changedBy, string? bankRrn = null, string? bankStan = null)
     {
         EnsureStatusIn("onaylanabilir", TransactionStatus.Pending, TransactionStatus.Pending3DS);
 
         BankAuthCode = bankAuthCode;
+        BankRrn = bankRrn;
+        BankStan = bankStan;
         CommissionAmount = decimal.Round(Amount.Amount * commissionRate / 100m, 2, MidpointRounding.AwayFromZero);
         NetAmount = Amount.Amount - CommissionAmount;
         CompletedAt = DateTime.UtcNow;

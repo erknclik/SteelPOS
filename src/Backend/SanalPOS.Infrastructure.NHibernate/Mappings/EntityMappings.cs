@@ -126,6 +126,8 @@ public class PaymentTransactionMap : ClassMapping<PaymentTransaction>
         });
         Property(x => x.CardHolderName, p => p.Column("card_holder_name"));
         Property(x => x.BankAuthCode, p => p.Column("bank_auth_code"));
+        Property(x => x.BankRrn, p => p.Column("bank_rrn"));
+        Property(x => x.BankStan, p => p.Column("bank_stan"));
         Property(x => x.BankProviderCode, p => p.Column("bank_provider_code"));
         Property(x => x.IdempotencyKey, p => { p.Column("idempotency_key"); p.Unique(true); });
         Property(x => x.CommissionAmount, p => p.Column("commission_amount"));
