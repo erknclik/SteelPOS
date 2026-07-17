@@ -16,7 +16,10 @@ public enum TransactionStatus
     Declined = 3,
     Reversed = 4,
     Refunded = 5,
-    PartiallyRefunded = 6
+    PartiallyRefunded = 6,
+
+    /// <summary>Kart hamili 3D Secure doğrulamasına (ACS) yönlendirildi; sonuç bekleniyor.</summary>
+    Pending3DS = 7
 }
 
 public enum MerchantStatus

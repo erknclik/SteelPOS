@@ -97,6 +97,14 @@ public sealed class Iso8583BankAdapter : IBankProviderAdapter
         if (request.InstallmentCount > 1)
             message[67] = request.InstallmentCount.ToString("D2");
 
+        // 3D Secure kanıtı (MPI çıktısı): ECI/CAVV DE47'de taşınır (dialekt override edilebilir).
+        if (request.ThreeDSecure is { } threeDs)
+        {
+            message[47] = threeDs.Xid is null
+                ? $"ECI={threeDs.Eci};CAVV={threeDs.Cavv}"
+                : $"ECI={threeDs.Eci};CAVV={threeDs.Cavv};XID={threeDs.Xid}";
+        }
+
         Iso8583Message response;
         try
         {

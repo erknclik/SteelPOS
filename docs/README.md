@@ -20,6 +20,7 @@ Bu klasör, SanalPOS projesinin uçtan uca teknik dokümantasyonunu içerir. Aş
 | 13 | [DevOps & Dağıtım](./13-devops-dagitim.md) | Docker, CI/CD, ortamlar, izleme |
 | 14 | [Konfigürasyon Yönetimi](./14-konfigurasyon-yonetimi.md) | Provider seçim mekanizması (ORM/Log/MQ) |
 | 15 | [ISO 8583 Banka Entegrasyonu](./15-iso8583-banka-entegrasyonu.md) | Dialekt sistemi, TCP kanal, adaptör, yeni banka ekleme |
+| 16 | [3D Secure](./16-3d-secure.md) | MPI soyutlaması, Pending3DS akışı, ACS simülatörü, PCI notları |
 
 ## Projenin Ayırt Edici Noktası: Provider Pattern
 

@@ -90,6 +90,7 @@ public static class Iso8583Dialects
             An(41, "Card Acceptor Terminal Id", Iso8583LengthKind.Fixed, 8),
             An(42, "Card Acceptor Id Code", Iso8583LengthKind.Fixed, 15),
             An(43, "Card Acceptor Name/Location", Iso8583LengthKind.Fixed, 40),
+            An(47, "Additional Data - National (3DS ECI/CAVV)", Iso8583LengthKind.LLLVar, 999, sensitive: true),
             An(48, "Additional Data - Private", Iso8583LengthKind.LLLVar, 999, sensitive: true),
             N(49, "Currency Code, Transaction", Iso8583LengthKind.Fixed, 3),
             new FieldSpec(52, "PIN Data", Iso8583Content.Binary, Iso8583LengthKind.Fixed, 8, Iso8583BodyEncoding.Binary, Sensitive: true),

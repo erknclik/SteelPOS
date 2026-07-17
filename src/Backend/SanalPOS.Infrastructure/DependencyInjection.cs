@@ -40,6 +40,22 @@ public static class DependencyInjection
         services.AddIso8583BankAdapters(configuration);
         services.AddSingleton<IBankAdapterFactory, BankAdapterFactory>();
 
+        // 3D Secure MPI: provider switch (diğer provider'larla aynı fail-fast yaklaşım).
+        var threeDsProvider = configuration["ThreeDSecure:Provider"] ?? ThreeDSecure.SimulatedThreeDSecureProvider.ProviderName;
+        switch (threeDsProvider)
+        {
+            case ThreeDSecure.SimulatedThreeDSecureProvider.ProviderName:
+                services.AddSingleton(new ThreeDSecure.SimulatedThreeDSecureOptions
+                {
+                    AcsUrl = configuration["ThreeDSecure:Simulated:AcsUrl"] ?? "/api/v1/acs-simulator"
+                });
+                services.AddSingleton<IThreeDSecureProvider, ThreeDSecure.SimulatedThreeDSecureProvider>();
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"Desteklenmeyen ThreeDSecure:Provider değeri: '{threeDsProvider}'. Geçerli değerler: 'Simulated'.");
+        }
+
         services.AddScoped<Webhooks.IWebhookDispatcher, Webhooks.WebhookDispatcher>();
 
         return services;

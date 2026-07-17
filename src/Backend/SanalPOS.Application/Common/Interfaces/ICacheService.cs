@@ -23,4 +23,5 @@ public static class CacheKeys
     public static string Idempotency(string idempotencyKey) => $"sanalpos:idempotency:{idempotencyKey}";
     public static string TransactionLock(Guid transactionId) => $"sanalpos:lock:tx:{transactionId}";
     public static string JwtBlacklist(string jti) => $"sanalpos:jwt-blacklist:{jti}";
+    public static string ThreeDSecureSession(string md) => $"sanalpos:3ds-session:{md}";
 }
