@@ -111,15 +111,52 @@ public class PaymentsController : ControllerBase
     /// <summary>
     /// ACS dönüş (callback) endpoint'i: kart hamilinin tarayıcısı ACS doğrulaması sonrası
     /// buraya form-post edilir. MD tek kullanımlık oturum belirtecidir; JWT beklenmez.
+    /// returnUrl verilirse (SPA akışı) sonuç JSON yerine 302 ile returnUrl'e taşınır;
+    /// open-redirect'e karşı yalnızca relatif yollar ve ThreeDSecure:AllowedReturnUrls
+    /// önekleri kabul edilir.
     /// </summary>
     [HttpPost("3ds/complete")]
     [AllowAnonymous]
     [Consumes("application/x-www-form-urlencoded")]
-    public async Task<ActionResult<PaymentResultDto>> Complete3DS(
+    public async Task<IActionResult> Complete3DS(
         [FromForm(Name = "MD")] string md,
         [FromForm(Name = "PaRes")] string paRes,
-        CancellationToken ct) =>
-        Ok(await _sender.Send(new Complete3DSPaymentCommand(md, paRes), ct));
+        [FromQuery] string? returnUrl,
+        [FromServices] Microsoft.Extensions.Configuration.IConfiguration configuration,
+        CancellationToken ct)
+    {
+        if (returnUrl is null)
+            return Ok(await _sender.Send(new Complete3DSPaymentCommand(md, paRes), ct));
+
+        if (!IsAllowedReturnUrl(returnUrl, configuration))
+            return BadRequest(new { title = "Geçersiz returnUrl.", status = 400 });
+
+        // Tarayıcı akışı: hata dahil her sonuç kullanıcıyı sonuç sayfasına taşımalı.
+        string query;
+        try
+        {
+            var result = await _sender.Send(new Complete3DSPaymentCommand(md, paRes), ct);
+            query = $"transactionId={result.TransactionId}&status={Uri.EscapeDataString(result.Status)}";
+        }
+        catch (Application.Common.Exceptions.NotFoundException)
+        {
+            query = "status=SessionExpired";
+        }
+
+        var separator = returnUrl.Contains('?') ? '&' : '?';
+        return Redirect($"{returnUrl}{separator}{query}");
+    }
+
+    private static bool IsAllowedReturnUrl(string returnUrl, Microsoft.Extensions.Configuration.IConfiguration configuration)
+    {
+        // Relatif yol her zaman güvenlidir ("//host" protokol-relatif biçimi hariç).
+        if (returnUrl.StartsWith('/') && !returnUrl.StartsWith("//", StringComparison.Ordinal))
+            return true;
+
+        var allowedPrefixes = configuration.GetSection("ThreeDSecure:AllowedReturnUrls").Get<string[]>() ?? [];
+        return allowedPrefixes.Any(prefix =>
+            !string.IsNullOrWhiteSpace(prefix) && returnUrl.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+    }
 
     /// <summary>Provizyonu kapatır (tahsilata çevirir).</summary>
     [HttpPost("{id:guid}/capture")]

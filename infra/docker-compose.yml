@@ -85,6 +85,8 @@ services:
       Messaging__Provider: "RabbitMq"
       Messaging__RabbitMq__Host: "rabbitmq"
       Jwt__SigningKey: "dev-only-signing-key-min-32-chars-CHANGE-ME!"
+      # 3DS SPA dönüş adresi: ACS callback'i sonrası tarayıcı bu origin'e yönlendirilebilir.
+      ThreeDSecure__AllowedReturnUrls__0: "http://localhost:3000/"
       # ISO 8583 simülatör bankası: BankProviderCode = "BANKSIM" olan terminaller
       # gerçek ISO 8583 hattı üzerinden banksim servisine yönlenir.
       Iso8583__Banks__0__Enabled: "true"

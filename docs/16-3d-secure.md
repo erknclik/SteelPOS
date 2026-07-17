@@ -57,6 +57,13 @@ Bu pencere boyunca kart bağlamı:
 `3ds/complete` endpoint'i ACS'in tarayıcı üzerinden yaptığı `application/x-www-form-urlencoded`
 POST'u kabul eder; kimlik MD üzerinden kurulur (JWT beklenmez).
 
+**SPA akışı:** `3ds/complete?returnUrl=...` verilirse sonuç JSON yerine 302 redirect ile
+`returnUrl?transactionId=...&status=Approved|Declined|SessionExpired` olarak taşınır; böylece
+tarayıcı React'taki `/payments/3ds/result` sayfasına düşer. Open-redirect'e karşı yalnızca
+relatif yollar ve `ThreeDSecure:AllowedReturnUrls` önekleri kabul edilir. Frontend'te
+"3D Secure ile öde" işaretliyken form, initiate yanıtındaki ACS'e otomatik form-post yapar
+(`AcsRedirect` bileşeni); kart bilgisi yönlendirmeden önce state'ten temizlenir.
+
 ## 4. Simüle MPI Senaryoları
 
 `ThreeDSecure:Provider = "Simulated"` (varsayılan) iken test kartları:

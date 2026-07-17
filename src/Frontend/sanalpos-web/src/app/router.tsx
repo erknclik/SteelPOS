@@ -7,6 +7,8 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { PaymentsPage } from "@/pages/PaymentsPage";
 import { NewPaymentPage } from "@/pages/NewPaymentPage";
 import { PaymentDetailPage } from "@/pages/PaymentDetailPage";
+import { ThreeDSResultPage } from "@/pages/ThreeDSResultPage";
+import { ReconciliationPage } from "@/pages/ReconciliationPage";
 import { MerchantsPage } from "@/pages/MerchantsPage";
 import { MerchantDetailPage } from "@/pages/MerchantDetailPage";
 import { ReportsPage } from "@/pages/ReportsPage";
@@ -40,10 +42,14 @@ export const router = createBrowserRouter([
           { path: "/", element: <DashboardPage /> },
           { path: "/payments", element: <PaymentsPage /> },
           { path: "/payments/new", element: <NewPaymentPage /> },
+          { path: "/payments/3ds/result", element: <ThreeDSResultPage /> },
           { path: "/payments/:id", element: <PaymentDetailPage /> },
           {
             element: <RequireRole roles={["SystemAdmin"]} />,
-            children: [{ path: "/merchants", element: <MerchantsPage /> }],
+            children: [
+              { path: "/merchants", element: <MerchantsPage /> },
+              { path: "/reconciliation", element: <ReconciliationPage /> },
+            ],
           },
           {
             element: <RequireRole roles={["SystemAdmin", "MerchantAdmin"]} />,

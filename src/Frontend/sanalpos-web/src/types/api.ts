@@ -38,12 +38,37 @@ export interface Transaction {
   maskedCardNumber: string;
   cardHolderName: string;
   bankAuthCode: string | null;
+  bankRrn: string | null;
   bankProviderCode: string;
   commissionAmount: number;
   netAmount: number;
   refundedTotal: number;
   requestedAt: string;
   completedAt: string | null;
+}
+
+export interface ThreeDSInitiationResult {
+  transactionId: string;
+  requiresRedirect: boolean;
+  md: string | null;
+  acsUrl: string | null;
+  paReq: string | null;
+  payment: PaymentResult | null;
+}
+
+export interface ReconciliationResult {
+  providerCode: string;
+  currency: string;
+  day: string;
+  saleCount: number;
+  saleAmount: number;
+  refundCount: number;
+  refundAmount: number;
+  voidCount: number;
+  voidAmount: number;
+  isBalanced: boolean;
+  reasonCode: string | null;
+  reasonMessage: string | null;
 }
 
 export interface StatusHistoryEntry {

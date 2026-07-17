@@ -42,6 +42,34 @@ export function useCreatePayment() {
   });
 }
 
+export function useInitiate3DS() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: paymentsApi.initiate3DS,
+    // Yönlendirme gerekmeyen (kayıtsız kart) durumda liste tazelenir; toast'ı çağıran
+    // bileşen sonuca göre gösterir (Approved/Declined ayrımı için).
+    onSuccess: (data) => {
+      if (!data.requiresRedirect) queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+}
+
+export function useCapture(id: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: () => paymentsApi.capture(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.success(t("payments.captured"));
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+}
+
 export function useRefund(id: string) {
   const queryClient = useQueryClient();
 
