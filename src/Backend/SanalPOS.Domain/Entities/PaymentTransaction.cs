@@ -66,9 +66,16 @@ public class PaymentTransaction : BaseEntity, IAuditableEntity
         IdempotencyKey = idempotencyKey;
     }
 
+    /// <summary>Kart hamilini 3D Secure doğrulamasına yönlendirir (ACS redirect öncesi).</summary>
+    public void StartThreeDSecure(string changedBy)
+    {
+        EnsureStatus(TransactionStatus.Pending, "3D Secure akışına alınabilir");
+        ChangeStatus(TransactionStatus.Pending3DS, changedBy);
+    }
+
     public void Approve(string bankAuthCode, decimal commissionRate, string changedBy)
     {
-        EnsureStatus(TransactionStatus.Pending, "onaylanabilir");
+        EnsureStatusIn("onaylanabilir", TransactionStatus.Pending, TransactionStatus.Pending3DS);
 
         BankAuthCode = bankAuthCode;
         CommissionAmount = decimal.Round(Amount.Amount * commissionRate / 100m, 2, MidpointRounding.AwayFromZero);
@@ -81,7 +88,7 @@ public class PaymentTransaction : BaseEntity, IAuditableEntity
 
     public void Decline(string reasonCode, string reasonMessage, string changedBy)
     {
-        EnsureStatus(TransactionStatus.Pending, "reddedilebilir");
+        EnsureStatusIn("reddedilebilir", TransactionStatus.Pending, TransactionStatus.Pending3DS);
 
         CompletedAt = DateTime.UtcNow;
         ChangeStatus(TransactionStatus.Declined, changedBy);
@@ -144,6 +151,12 @@ public class PaymentTransaction : BaseEntity, IAuditableEntity
     private void EnsureStatus(TransactionStatus expected, string action)
     {
         if (Status != expected)
+            throw new DomainException($"'{Status}' durumundaki işlem {action} değildir.");
+    }
+
+    private void EnsureStatusIn(string action, params TransactionStatus[] allowed)
+    {
+        if (!allowed.Contains(Status))
             throw new DomainException($"'{Status}' durumundaki işlem {action} değildir.");
     }
 }

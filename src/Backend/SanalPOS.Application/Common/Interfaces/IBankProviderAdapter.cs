@@ -30,7 +30,11 @@ public sealed record ChargeRequest(
     decimal Amount,
     string Currency,
     int InstallmentCount,
-    string OrderReference);
+    string OrderReference,
+    ThreeDSecureData? ThreeDSecure = null);
+
+/// <summary>Başarılı 3D Secure doğrulamasının otorizasyona taşınan kanıtı (MPI çıktısı).</summary>
+public sealed record ThreeDSecureData(string Eci, string Cavv, string? Xid);
 
 public sealed record ChargeResult(bool IsApproved, string? AuthCode, string? ReasonCode, string? ReasonMessage);
 

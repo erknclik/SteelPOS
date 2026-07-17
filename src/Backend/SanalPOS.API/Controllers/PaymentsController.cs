@@ -6,6 +6,7 @@ using SanalPOS.Application.Common.Models;
 using SanalPOS.Application.Payments.Commands.CapturePayment;
 using SanalPOS.Application.Payments.Commands.CreatePayment;
 using SanalPOS.Application.Payments.Commands.RefundPayment;
+using SanalPOS.Application.Payments.Commands.ThreeDSecure;
 using SanalPOS.Application.Payments.Commands.VoidPayment;
 using SanalPOS.Application.Payments.Dtos;
 using SanalPOS.Application.Payments.Queries;
@@ -68,6 +69,57 @@ public class PaymentsController : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = result.TransactionId, version = "1" }, result);
     }
+
+    public sealed record ThreeDSPaymentRequest(
+        Guid MerchantId,
+        Guid TerminalId,
+        string OrderReference,
+        decimal Amount,
+        string Currency,
+        short InstallmentCount,
+        string CardNumber,
+        string CardHolderName,
+        int ExpireMonth,
+        int ExpireYear,
+        string Cvv,
+        string CallbackUrl);
+
+    /// <summary>
+    /// 3D Secure satış akışını başlatır. Kart 3DS'e kayıtlıysa yanıtta requiresRedirect=true
+    /// ve ACS yönlendirme bilgileri (acsUrl, md, paReq) döner; istemci kart hamilini ACS'e
+    /// form-post ile yönlendirir. Kayıtlı değilse işlem doğrudan sonuçlanır.
+    /// Idempotency-Key header'ı zorunludur.
+    /// </summary>
+    [HttpPost("3ds")]
+    public async Task<ActionResult<ThreeDSInitiationResultDto>> Initiate3DS(ThreeDSPaymentRequest request, CancellationToken ct)
+    {
+        if (!Request.Headers.TryGetValue(IdempotencyKeyHeader, out var idempotencyKey)
+            || string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return BadRequest(new { title = $"'{IdempotencyKeyHeader}' header'ı zorunludur.", status = 400 });
+        }
+
+        var result = await _sender.Send(new Initiate3DSPaymentCommand(
+            request.MerchantId, request.TerminalId, request.OrderReference,
+            request.Amount, request.Currency, request.InstallmentCount,
+            request.CardNumber, request.CardHolderName, request.ExpireMonth, request.ExpireYear,
+            request.Cvv, idempotencyKey!, request.CallbackUrl), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// ACS dönüş (callback) endpoint'i: kart hamilinin tarayıcısı ACS doğrulaması sonrası
+    /// buraya form-post edilir. MD tek kullanımlık oturum belirtecidir; JWT beklenmez.
+    /// </summary>
+    [HttpPost("3ds/complete")]
+    [AllowAnonymous]
+    [Consumes("application/x-www-form-urlencoded")]
+    public async Task<ActionResult<PaymentResultDto>> Complete3DS(
+        [FromForm(Name = "MD")] string md,
+        [FromForm(Name = "PaRes")] string paRes,
+        CancellationToken ct) =>
+        Ok(await _sender.Send(new Complete3DSPaymentCommand(md, paRes), ct));
 
     /// <summary>Provizyonu kapatır (tahsilata çevirir).</summary>
     [HttpPost("{id:guid}/capture")]

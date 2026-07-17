@@ -82,6 +82,30 @@ public class Iso8583BankAdapterTests
     }
 
     [Fact]
+    public async Task Charge_WithThreeDSecureData_MapsEciCavvToDe47()
+    {
+        var channel = new FakeChannel();
+        var request = SampleCharge() with
+        {
+            ThreeDSecure = new ThreeDSecureData("05", "AAABBBCCCDDD=", "xid-123")
+        };
+
+        await CreateAdapter(channel).ChargeAsync(request);
+
+        channel.Sent.Single()[47].Should().Be("ECI=05;CAVV=AAABBBCCCDDD=;XID=xid-123");
+    }
+
+    [Fact]
+    public async Task Charge_WithoutThreeDSecure_DoesNotSendDe47()
+    {
+        var channel = new FakeChannel();
+
+        await CreateAdapter(channel).ChargeAsync(SampleCharge());
+
+        channel.Sent.Single().Has(47).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task PreAuth_UsesAuthorizationMti()
     {
         var channel = new FakeChannel();

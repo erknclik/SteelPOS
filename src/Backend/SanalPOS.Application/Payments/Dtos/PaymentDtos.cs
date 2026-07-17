@@ -40,4 +40,24 @@ public sealed record TransactionDto(
 
 public sealed record StatusHistoryDto(string OldStatus, string NewStatus, DateTime ChangedAt, string ChangedBy);
 
+/// <summary>
+/// 3DS başlatma sonucu. RequiresRedirect=true ise kart hamili AcsUrl'e MD/PaReq ile
+/// yönlendirilmelidir; false ise kart 3DS'e kayıtlı değildir ve işlem Payment içinde
+/// doğrudan sonuçlanmıştır.
+/// </summary>
+public sealed record ThreeDSInitiationResultDto(
+    Guid TransactionId,
+    bool RequiresRedirect,
+    string? Md,
+    string? AcsUrl,
+    string? PaReq,
+    PaymentResultDto? Payment)
+{
+    public static ThreeDSInitiationResultDto Redirect(Guid transactionId, string md, string acsUrl, string? paReq) =>
+        new(transactionId, true, md, acsUrl, paReq, null);
+
+    public static ThreeDSInitiationResultDto CompletedWithoutRedirect(PaymentResultDto payment) =>
+        new(payment.TransactionId, false, null, null, null, payment);
+}
+
 public sealed record RefundResultDto(Guid RefundTransactionId, Guid OriginalTransactionId, decimal RefundAmount, string Status, string TransactionStatus);
