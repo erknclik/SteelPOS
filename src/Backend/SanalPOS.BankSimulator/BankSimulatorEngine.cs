@@ -21,6 +21,7 @@ public sealed class BankSimulatorEngine : IAsyncDisposable
     private readonly ILogger _logger;
     private readonly TcpListener _listener;
     private readonly CancellationTokenSource _cts = new();
+    private readonly SimulatorLedger _ledger = new();
     private Task? _acceptLoop;
 
     public BankSimulatorEngine(Iso8583Spec spec, ILogger logger, int port = 0)
@@ -71,7 +72,7 @@ public sealed class BankSimulatorEngine : IAsyncDisposable
                     var request = await ReadMessageAsync(stream, ct);
                     _logger.LogInformation("İstek: {Message}", Iso8583MessageMasker.Describe(request, _spec));
 
-                    var response = Scenarios.RespondTo(request);
+                    var response = Scenarios.RespondTo(request, _ledger);
                     if (response is null)
                     {
                         _logger.LogWarning("Senaryo gereği yanıt gönderilmiyor (timeout simülasyonu). STAN: {Stan}", request[11]);

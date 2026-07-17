@@ -99,6 +99,13 @@ public static class Iso8583Dialects
             An(63, "Private Data 2", Iso8583LengthKind.LLLVar, 999),
             N(67, "Extended Payment Code (Taksit)", Iso8583LengthKind.Fixed, 2),
             N(70, "Network Management Information Code", Iso8583LengthKind.Fixed, 3),
+            // Gün sonu mutabakat (0500 batch close) toplam alanları:
+            N(74, "Credits, Number (iade adedi)", Iso8583LengthKind.Fixed, 10),
+            N(76, "Debits, Number (satış adedi)", Iso8583LengthKind.Fixed, 10),
+            N(77, "Debits Reversal, Number (iptal adedi)", Iso8583LengthKind.Fixed, 10),
+            N(86, "Credits, Amount (iade tutarı)", Iso8583LengthKind.Fixed, 16),
+            N(88, "Debits, Amount (satış tutarı)", Iso8583LengthKind.Fixed, 16),
+            N(89, "Debits Reversal, Amount (iptal tutarı)", Iso8583LengthKind.Fixed, 16),
             N(90, "Original Data Elements", Iso8583LengthKind.Fixed, 42),
         };
     }

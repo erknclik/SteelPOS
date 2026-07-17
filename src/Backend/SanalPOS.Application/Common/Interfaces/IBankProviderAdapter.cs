@@ -13,7 +13,25 @@ public interface IBankProviderAdapter
     Task<BankOperationResult> CaptureAsync(BankTransactionReference original, decimal amount, CancellationToken ct = default);
     Task<BankOperationResult> VoidAsync(BankTransactionReference original, CancellationToken ct = default);
     Task<BankOperationResult> RefundAsync(BankTransactionReference original, decimal amount, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gün sonu mutabakatı (batch close): günün toplamları bankaya gönderilir, banka kendi
+    /// defteriyle karşılaştırır. Uyumsuzlukta banka "95" döner (mutabakatsızlık) ve fark
+    /// operasyon ekibince incelenir.
+    /// </summary>
+    Task<BankOperationResult> SettleAsync(SettlementTotals totals, CancellationToken ct = default);
 }
+
+/// <summary>Gün sonu mutabakat toplamları (tek para birimi için). Tutarlar majör birimdir (TL).</summary>
+public sealed record SettlementTotals(
+    DateOnly Day,
+    string Currency,
+    int SaleCount,
+    decimal SaleAmount,
+    int RefundCount,
+    decimal RefundAmount,
+    int VoidCount,
+    decimal VoidAmount);
 
 /// <summary>
 /// Sonraki operasyonların (capture/void/refund) bankaya taşıdığı orijinal işlem kimliği.

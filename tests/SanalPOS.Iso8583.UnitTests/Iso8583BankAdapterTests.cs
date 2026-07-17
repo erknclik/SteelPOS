@@ -253,6 +253,44 @@ public class Iso8583BankAdapterTests
     }
 
     [Fact]
+    public async Task Settle_SendsBatchCloseWithTotals()
+    {
+        var channel = new FakeChannel();
+        var totals = new SettlementTotals(
+            new DateOnly(2026, 7, 17), "TRY",
+            SaleCount: 12, SaleAmount: 1500.75m,
+            RefundCount: 2, RefundAmount: 100.25m,
+            VoidCount: 1, VoidAmount: 50m);
+
+        var result = await CreateAdapter(channel).SettleAsync(totals);
+
+        result.IsSuccessful.Should().BeTrue();
+        var sent = channel.Sent.Single();
+        sent.Mti.Should().Be("0500");
+        sent[3].Should().Be("920000");
+        sent[49].Should().Be("949");
+        sent[76].Should().Be("0000000012");
+        sent[88].Should().Be("0000000000150075");
+        sent[74].Should().Be("0000000002");
+        sent[86].Should().Be("0000000000010025");
+        sent[77].Should().Be("0000000001");
+        sent[89].Should().Be("0000000000005000");
+    }
+
+    [Fact]
+    public async Task Settle_WhenBankReportsOutOfBalance_ReturnsCode95()
+    {
+        var channel = new FakeChannel { Responder = FakeChannel.DeclineWith("95") };
+        var totals = new SettlementTotals(new DateOnly(2026, 7, 17), "TRY", 1, 10m, 0, 0m, 0, 0m);
+
+        var result = await CreateAdapter(channel).SettleAsync(totals);
+
+        result.IsSuccessful.Should().BeFalse();
+        result.ReasonCode.Should().Be("95");
+        result.ReasonMessage.Should().Contain("Mutabakat");
+    }
+
+    [Fact]
     public async Task UnsupportedCurrency_Throws()
     {
         var adapter = CreateAdapter(new FakeChannel());
