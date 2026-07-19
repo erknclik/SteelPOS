@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { reconciliationApi } from "@/features/reconciliation/api";
-import { Button, Card, Field, Input, Table } from "@/shared/components/ui";
+import { Button, Card, Field, Input, Spinner, Table } from "@/shared/components/ui";
 import { toast } from "@/shared/components/Toast";
 import { getErrorMessage } from "@/shared/lib/axiosClient";
-import { formatMoney } from "@/shared/lib/formatters";
+import { formatDate, formatMoney } from "@/shared/lib/formatters";
 
 function yesterdayIso(): string {
   const d = new Date();
@@ -16,12 +16,19 @@ function yesterdayIso(): string {
 /** Gün sonu mutabakatı: toplamlar bankaya (ISO 8583 0500 batch-close) gönderilir. */
 export function ReconciliationPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [day, setDay] = useState(yesterdayIso());
   const [providerCode, setProviderCode] = useState("");
+
+  const history = useQuery({
+    queryKey: ["reconciliation-history"],
+    queryFn: () => reconciliationApi.history(20),
+  });
 
   const run = useMutation({
     mutationFn: () => reconciliationApi.run(day, providerCode || undefined),
     onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ["reconciliation-history"] });
       if (results.length === 0) toast.success(t("reconciliation.noTransactions"));
       else if (results.every((r) => r.isBalanced)) toast.success(t("reconciliation.allBalanced"));
       else toast.error(t("reconciliation.outOfBalance"));
@@ -99,6 +106,59 @@ export function ReconciliationPage() {
           <p className="py-4 text-center text-sm text-gray-500">{t("reconciliation.noTransactions")}</p>
         </Card>
       )}
+
+      <Card title={t("reconciliation.history")}>
+        {history.isLoading ? (
+          <Spinner />
+        ) : (history.data ?? []).length === 0 ? (
+          <p className="py-4 text-center text-sm text-gray-500">{t("common.noData")}</p>
+        ) : (
+          <Table
+            headers={[
+              t("reconciliation.day"),
+              t("reconciliation.provider"),
+              t("payments.currency"),
+              t("reconciliation.sales"),
+              t("reconciliation.refunds"),
+              t("reconciliation.voids"),
+              t("reconciliation.result"),
+              t("reconciliation.executedAt"),
+            ]}
+          >
+            {(history.data ?? []).map((r) => (
+              <tr key={r.id}>
+                <td className="px-3 py-2">{r.day}</td>
+                <td className="px-3 py-2 font-medium">{r.providerCode}</td>
+                <td className="px-3 py-2">{r.currency}</td>
+                <td className="px-3 py-2">
+                  {r.saleCount} / {formatMoney(r.saleAmount, r.currency)}
+                </td>
+                <td className="px-3 py-2">
+                  {r.refundCount} / {formatMoney(r.refundAmount, r.currency)}
+                </td>
+                <td className="px-3 py-2">
+                  {r.voidCount} / {formatMoney(r.voidAmount, r.currency)}
+                </td>
+                <td className="px-3 py-2">
+                  {r.isBalanced ? (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      {t("reconciliation.balanced")}
+                    </span>
+                  ) : (
+                    <span
+                      className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+                      title={r.reasonMessage ?? undefined}
+                    >
+                      {t("reconciliation.unbalanced")} ({r.reasonCode})
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-gray-500">{formatDate(r.executedAt)}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Card>
     </div>
   );
 }

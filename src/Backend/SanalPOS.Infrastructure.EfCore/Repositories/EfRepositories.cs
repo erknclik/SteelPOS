@@ -202,6 +202,19 @@ public class EfRefundTransactionRepository : EfRepository<RefundTransaction>, IR
     }
 }
 
+public class EfReconciliationRunRepository : EfRepository<ReconciliationRun>, IReconciliationRunRepository
+{
+    public EfReconciliationRunRepository(SanalPosDbContext context) : base(context)
+    {
+    }
+
+    public async Task<IReadOnlyList<ReconciliationRun>> GetRecentAsync(int count, CancellationToken ct = default) =>
+        await Set.AsNoTracking()
+            .OrderByDescending(x => x.ExecutedAt)
+            .Take(count)
+            .ToListAsync(ct);
+}
+
 public class EfCommissionRuleRepository : EfRepository<CommissionRule>, ICommissionRuleRepository
 {
     public EfCommissionRuleRepository(SanalPosDbContext context) : base(context)

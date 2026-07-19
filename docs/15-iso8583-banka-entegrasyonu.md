@@ -170,6 +170,11 @@ Akış: günün toplamları banka sağlayıcısı + para birimi bazında hesapla
 
 Banka toplamları kendi defteriyle karşılaştırır: eşleşirse DE39=00 (dengede),
 eşleşmezse **DE39=95** (out-of-balance) döner ve fark operasyon ekibince incelenir.
+
+Her koşum sonucu **`reconciliation_runs` tablosuna kalıcı yazılır** (banka + para birimi
+başına bir satır); `GET /api/v1/reconciliation/history` son koşumları döner. Frontend'te
+mutabakat sayfası geçmiş tablosunu, dashboard ise son koşumların dengede olup olmadığını
+gösteren bir kart sunar — dengesiz kayıtlar operasyonun inceleme kuyruğudur.
 Sayım kuralı: void edilen işlem **hem satış hem iptal** kalemidir (banka semantiği,
 net = debits − reversals); ön otorizasyon (0100) tahsilat olmadığı için sayılmaz,
 kapama (0220) sayılır. Timeout sonrası otomatik reversal'a düşen işlemler hiçbir

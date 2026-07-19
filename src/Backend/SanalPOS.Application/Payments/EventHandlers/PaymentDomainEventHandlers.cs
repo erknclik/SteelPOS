@@ -127,8 +127,8 @@ public class RefundCompletedDomainEventHandler : INotificationHandler<DomainEven
         await _unitOfWork.SaveChangesAsync(ct);
 
         await _eventPublisher.PublishAsync(new RefundCompletedEvent(
-            e.Refund.Id, e.Original.Id, e.Refund.RefundAmount,
-            e.OccurredAtUtc, _correlationId.CorrelationId), ct);
+            e.Refund.Id, e.Original.Id, e.Original.MerchantId, e.Refund.RefundAmount,
+            e.Original.Amount.Currency, e.OccurredAtUtc, _correlationId.CorrelationId), ct);
     }
 }
 

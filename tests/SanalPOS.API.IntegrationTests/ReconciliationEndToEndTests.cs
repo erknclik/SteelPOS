@@ -61,6 +61,19 @@ public class ReconciliationEndToEndTests : IClassFixture<Iso8583ApiFactory>
         result.GetProperty("voidAmount").GetDecimal().Should().Be(200.50m);
         result.GetProperty("isBalanced").GetBoolean().Should().BeTrue("banka defteri ile toplamlar birebir eşleşmeli");
 
+        // 3) Koşum kalıcılaşmış olmalı: geçmiş endpoint'i aynı sonucu döndürür.
+        using var historyRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v1/reconciliation/history?count=5");
+        historyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var historyResponse = await _client.SendAsync(historyRequest);
+        historyResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var history = JsonDocument.Parse(await historyResponse.Content.ReadAsStringAsync()).RootElement;
+        history.GetArrayLength().Should().BeGreaterThan(0);
+        var latest = history[0];
+        latest.GetProperty("providerCode").GetString().Should().Be(Iso8583ApiFactory.ProviderCode);
+        latest.GetProperty("isBalanced").GetBoolean().Should().BeTrue();
+        latest.GetProperty("saleCount").GetInt32().Should().Be(3);
+
         _ = tx1;
     }
 
