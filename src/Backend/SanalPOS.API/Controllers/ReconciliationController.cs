@@ -28,4 +28,10 @@ public class ReconciliationController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ReconciliationResultDto>>> Run(
         RunReconciliationRequest request, CancellationToken ct) =>
         Ok(await _sender.Send(new RunReconciliationCommand(request.Day, request.ProviderCode), ct));
+
+    /// <summary>Son mutabakat koşumları (yeni -> eski); dengesiz kayıtlar inceleme kuyruğudur.</summary>
+    [HttpGet("history")]
+    public async Task<ActionResult<IReadOnlyList<ReconciliationRunDto>>> History(
+        [FromQuery] int count = 20, CancellationToken ct = default) =>
+        Ok(await _sender.Send(new GetReconciliationHistoryQuery(count), ct));
 }

@@ -74,6 +74,10 @@
     "unbalanced": "Out of balance",
     "allBalanced": "Reconciliation is balanced with all banks.",
     "outOfBalance": "Reconciliation mismatch! Review the details.",
-    "noTransactions": "No transactions to reconcile for the selected day."
+    "noTransactions": "No transactions to reconcile for the selected day.",
+    "history": "Run History",
+    "executedAt": "Executed At",
+    "lastRuns": "Recent Reconciliations",
+    "unbalancedSummary": "{{count}} run(s) out of balance!"
   }
 }

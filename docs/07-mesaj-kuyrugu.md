@@ -99,7 +99,9 @@ public record PaymentFailedEvent(
 public record RefundCompletedEvent(
     Guid RefundTransactionId,
     Guid OriginalTransactionId,
+    Guid MerchantId,
     decimal RefundAmount,
+    string Currency,
     DateTime CompletedAtUtc,
     string CorrelationId);
 ```

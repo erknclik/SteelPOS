@@ -70,9 +70,18 @@ public class RefundCompletedConsumer : IConsumer<RefundCompletedEvent>
         _logger.LogInformation(
             "RefundCompletedEvent tüketildi. RefundTransactionId: {RefundTransactionId}", e.RefundTransactionId);
 
-        // Merchant id orijinal işlemden değil event'ten gelmediği için webhook'u
-        // refund payload'ı ile orijinal işlem sahibine göndermek üzere ileri fazda zenginleştirilebilir.
-        await Task.CompletedTask;
+        await _webhookDispatcher.DispatchAsync(
+            e.MerchantId,
+            "RefundCompleted",
+            new
+            {
+                e.RefundTransactionId,
+                e.OriginalTransactionId,
+                e.RefundAmount,
+                e.Currency,
+                e.CompletedAtUtc
+            },
+            context.CancellationToken);
     }
 }
 

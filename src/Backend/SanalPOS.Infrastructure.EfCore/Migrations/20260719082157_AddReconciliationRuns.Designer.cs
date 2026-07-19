@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SanalPOS.Infrastructure.EfCore;
@@ -11,9 +12,11 @@ using SanalPOS.Infrastructure.EfCore;
 namespace SanalPOS.Infrastructure.EfCore.Migrations
 {
     [DbContext(typeof(SanalPosDbContext))]
-    partial class SanalPosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719082157_AddReconciliationRuns")]
+    partial class AddReconciliationRuns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

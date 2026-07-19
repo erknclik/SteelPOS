@@ -74,6 +74,10 @@
     "unbalanced": "Dengede değil",
     "allBalanced": "Tüm bankalarla mutabakat dengede.",
     "outOfBalance": "Mutabakat farkı var! Detayları inceleyin.",
-    "noTransactions": "Seçilen günde mutabakatlanacak işlem yok."
+    "noTransactions": "Seçilen günde mutabakatlanacak işlem yok.",
+    "history": "Geçmiş Koşumlar",
+    "executedAt": "Çalıştırılma",
+    "lastRuns": "Son Mutabakatlar",
+    "unbalancedSummary": "{{count}} koşumda mutabakat farkı var!"
   }
 }

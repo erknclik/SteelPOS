@@ -226,6 +226,20 @@ public class NhRefundTransactionRepository : NhRepository<RefundTransaction>, IR
     }
 }
 
+public class NhReconciliationRunRepository : NhRepository<ReconciliationRun>, IReconciliationRunRepository
+{
+    public NhReconciliationRunRepository(ISession session, ICurrentUserService currentUser)
+        : base(session, currentUser)
+    {
+    }
+
+    public async Task<IReadOnlyList<ReconciliationRun>> GetRecentAsync(int count, CancellationToken ct = default) =>
+        await Session.Query<ReconciliationRun>()
+            .OrderByDescending(x => x.ExecutedAt)
+            .Take(count)
+            .ToListAsync(ct);
+}
+
 public class NhCommissionRuleRepository : NhRepository<CommissionRule>, ICommissionRuleRepository
 {
     public NhCommissionRuleRepository(ISession session, ICurrentUserService currentUser)

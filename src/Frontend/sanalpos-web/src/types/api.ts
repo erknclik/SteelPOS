@@ -71,6 +71,23 @@ export interface ReconciliationResult {
   reasonMessage: string | null;
 }
 
+export interface ReconciliationRun {
+  id: string;
+  day: string;
+  providerCode: string;
+  currency: string;
+  saleCount: number;
+  saleAmount: number;
+  refundCount: number;
+  refundAmount: number;
+  voidCount: number;
+  voidAmount: number;
+  isBalanced: boolean;
+  reasonCode: string | null;
+  reasonMessage: string | null;
+  executedAt: string;
+}
+
 export interface StatusHistoryEntry {
   oldStatus: string;
   newStatus: string;

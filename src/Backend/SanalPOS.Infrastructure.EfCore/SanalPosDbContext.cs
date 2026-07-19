@@ -24,6 +24,7 @@ public class SanalPosDbContext : DbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ReconciliationRun> ReconciliationRuns => Set<ReconciliationRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

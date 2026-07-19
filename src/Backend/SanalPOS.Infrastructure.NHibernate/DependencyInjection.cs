@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, NhUserRepository>();
         services.AddScoped<IRoleRepository, NhRoleRepository>();
         services.AddScoped<IRefreshTokenRepository, NhRefreshTokenRepository>();
+        services.AddScoped<IReconciliationRunRepository, NhReconciliationRunRepository>();
 
         return services;
     }

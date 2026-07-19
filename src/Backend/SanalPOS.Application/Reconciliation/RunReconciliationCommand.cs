@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SanalPOS.Application.Common.Interfaces;
+using SanalPOS.Domain.Entities;
 using SanalPOS.Domain.Interfaces;
 
 namespace SanalPOS.Application.Reconciliation;
@@ -44,18 +45,24 @@ public class RunReconciliationCommandHandler : IRequestHandler<RunReconciliation
 {
     private readonly IPaymentTransactionRepository _transactionRepository;
     private readonly IRefundTransactionRepository _refundRepository;
+    private readonly IReconciliationRunRepository _runRepository;
     private readonly IBankAdapterFactory _bankAdapterFactory;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<RunReconciliationCommandHandler> _logger;
 
     public RunReconciliationCommandHandler(
         IPaymentTransactionRepository transactionRepository,
         IRefundTransactionRepository refundRepository,
+        IReconciliationRunRepository runRepository,
         IBankAdapterFactory bankAdapterFactory,
+        IUnitOfWork unitOfWork,
         ILogger<RunReconciliationCommandHandler> logger)
     {
         _transactionRepository = transactionRepository;
         _refundRepository = refundRepository;
+        _runRepository = runRepository;
         _bankAdapterFactory = bankAdapterFactory;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -88,8 +95,21 @@ public class RunReconciliationCommandHandler : IRequestHandler<RunReconciliation
                 refund?.RefundCount ?? 0, refund?.RefundAmount ?? 0m,
                 payment?.VoidCount ?? 0, payment?.VoidAmount ?? 0m);
 
-            results.Add(await SettleAsync(providerCode, totals, ct));
+            var result = await SettleAsync(providerCode, totals, ct);
+            results.Add(result);
+
+            // Koşum sonucu kalıcıdır: dengesiz kayıtlar operasyonun inceleme kuyruğudur.
+            await _runRepository.AddAsync(new ReconciliationRun(
+                day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                result.ProviderCode, result.Currency,
+                result.SaleCount, result.SaleAmount,
+                result.RefundCount, result.RefundAmount,
+                result.VoidCount, result.VoidAmount,
+                result.IsBalanced, result.ReasonCode, result.ReasonMessage), ct);
         }
+
+        if (results.Count > 0)
+            await _unitOfWork.SaveChangesAsync(ct);
 
         return results;
     }

@@ -101,6 +101,26 @@ public class PaymentTransactionConfiguration : IEntityTypeConfiguration<PaymentT
     }
 }
 
+public class ReconciliationRunConfiguration : IEntityTypeConfiguration<ReconciliationRun>
+{
+    public void Configure(EntityTypeBuilder<ReconciliationRun> builder)
+    {
+        builder.ToTable("reconciliation_runs");
+        builder.ConfigureBase();
+
+        builder.Property(x => x.ProviderCode).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+        builder.Property(x => x.SaleAmount).HasColumnType("numeric(18,2)");
+        builder.Property(x => x.RefundAmount).HasColumnType("numeric(18,2)");
+        builder.Property(x => x.VoidAmount).HasColumnType("numeric(18,2)");
+        builder.Property(x => x.ReasonCode).HasMaxLength(20);
+        builder.Property(x => x.ReasonMessage).HasMaxLength(500);
+
+        builder.HasIndex(x => new { x.Day, x.ProviderCode });
+        builder.HasIndex(x => x.ExecutedAt).IsDescending();
+    }
+}
+
 public class TransactionStatusHistoryConfiguration : IEntityTypeConfiguration<TransactionStatusHistory>
 {
     public void Configure(EntityTypeBuilder<TransactionStatusHistory> builder)

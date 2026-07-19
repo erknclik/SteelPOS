@@ -102,6 +102,12 @@ public interface IRefundTransactionRepository : IRepository<RefundTransaction>
         DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
 }
 
+public interface IReconciliationRunRepository : IRepository<ReconciliationRun>
+{
+    /// <summary>Son koşumlar, yeni -> eski sıralı (mutabakat geçmişi ve dashboard için).</summary>
+    Task<IReadOnlyList<ReconciliationRun>> GetRecentAsync(int count, CancellationToken ct = default);
+}
+
 public interface ICommissionRuleRepository : IRepository<CommissionRule>
 {
     Task<IReadOnlyList<CommissionRule>> GetByMerchantAsync(Guid merchantId, CancellationToken ct = default);

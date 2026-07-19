@@ -1,5 +1,5 @@
 import { apiClient } from "@/shared/lib/axiosClient";
-import type { ReconciliationResult } from "@/types/api";
+import type { ReconciliationResult, ReconciliationRun } from "@/types/api";
 
 export const reconciliationApi = {
   /** Gün sonu mutabakatını manuel tetikler (SystemAdmin). day: yyyy-MM-dd. */
@@ -9,5 +9,11 @@ export const reconciliationApi = {
         day,
         providerCode: providerCode || null,
       })
+      .then((r) => r.data),
+
+  /** Son mutabakat koşumları (yeni -> eski). */
+  history: (count = 20) =>
+    apiClient
+      .get<ReconciliationRun[]>("/reconciliation/history", { params: { count } })
       .then((r) => r.data),
 };

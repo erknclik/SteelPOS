@@ -95,6 +95,28 @@ public class TerminalMap : ClassMapping<Terminal>
     }
 }
 
+public class ReconciliationRunMap : ClassMapping<ReconciliationRun>
+{
+    public ReconciliationRunMap()
+    {
+        Table("reconciliation_runs");
+        this.MapBase();
+        Property(x => x.Day, p => p.Column("day"));
+        Property(x => x.ProviderCode, p => p.Column("provider_code"));
+        Property(x => x.Currency, p => p.Column("currency"));
+        Property(x => x.SaleCount, p => p.Column("sale_count"));
+        Property(x => x.SaleAmount, p => p.Column("sale_amount"));
+        Property(x => x.RefundCount, p => p.Column("refund_count"));
+        Property(x => x.RefundAmount, p => p.Column("refund_amount"));
+        Property(x => x.VoidCount, p => p.Column("void_count"));
+        Property(x => x.VoidAmount, p => p.Column("void_amount"));
+        Property(x => x.IsBalanced, p => p.Column("is_balanced"));
+        Property(x => x.ReasonCode, p => p.Column("reason_code"));
+        Property(x => x.ReasonMessage, p => p.Column("reason_message"));
+        Property(x => x.ExecutedAt, p => p.Column("executed_at"));
+    }
+}
+
 public class PaymentTransactionMap : ClassMapping<PaymentTransaction>
 {
     public PaymentTransactionMap()
